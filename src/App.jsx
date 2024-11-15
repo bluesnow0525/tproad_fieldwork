@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './component/Sidebar';
 import Header from './component/Header';
+import Footer from './component/Footer';
 import Login from './pages/Login';
 
 import Home from './pages/Home';
@@ -87,6 +88,7 @@ function Layout({ children }) {
         <Sidebar />
         <main className="ml-64 p-8 w-full">{children}</main>
       </div>
+      <Footer />
     </div>
   );
 }

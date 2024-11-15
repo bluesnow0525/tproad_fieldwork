@@ -12,7 +12,7 @@ function Sidebar() {
 
   return (
     <div className="bg-gray-200 w-64 h-full fixed">
-      <nav className="mt-6 ml-5"> 
+      <nav className="mt-6 ml-5">
         <ul className="text-lg">
           <li className="p-2 flex font-bold text-xl items-center">
             <img
@@ -216,7 +216,9 @@ function Sidebar() {
                 <Link to="/system-management/shared-code">共用代碼管理</Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/system-management/menu-permission">選單權限管理</Link>
+                <Link to="/system-management/menu-permission">
+                  選單權限管理
+                </Link>
               </li>
               <li className="p-2 flex items-center">
                 <Link to="/system-management/change-log">系統異動紀錄</Link>

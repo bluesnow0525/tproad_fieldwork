@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import PaginationComponent from "../../component/Pagination";
 
 function CaseManagement() {
   const [data, setData] = useState([]);
@@ -21,17 +22,44 @@ function CaseManagement() {
     responsibleFactory: "",
     uploadPipe: "",
   });
+  const [selectedItems, setSelectedItems] = useState([]); // 存儲被選中的項目 ID
+  const [selectAll, setSelectAll] = useState(false); // 控制全選框
 
   const itemsPerPage = 50;
 
   useEffect(() => {
-    fetch("/data/test.json")
+    fetch("/data/test_casemanagement.json")
       .then((response) => response.json())
       .then((jsonData) => {
         setData(jsonData);
         setFilteredData(jsonData);
       });
   }, []);
+
+  const toggleSelectAll = () => {
+    setSelectAll(!selectAll);
+    if (!selectAll) {
+      // 全選當前頁的項目
+      const allIdsOnPage = paginatedData.map((item) => item.inspectionNumber);
+      setSelectedItems(allIdsOnPage);
+      console.log("選取的項目：", allIdsOnPage); // 在控制台顯示選取的項目
+    } else {
+      // 清空選中的項目
+      setSelectedItems([]);
+      console.log("選取的項目：", []); // 清空選擇
+    }
+  };
+
+  const handleSelectItem = (id) => {
+    setSelectAll(false); // 取消全選的狀態
+    setSelectedItems((prevSelected) => {
+      const newSelected = prevSelected.includes(id)
+        ? prevSelected.filter((item) => item !== id)
+        : [...prevSelected, id];
+      console.log("選取的項目：", newSelected); // 在控制台顯示選取的項目
+      return newSelected;
+    });
+  };
 
   const handleFilterChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -58,8 +86,10 @@ function CaseManagement() {
       );
     }
     if (filters.reportDateFrom) {
+      const adjustedReportDateFrom = new Date(filters.reportDateFrom);
+      adjustedReportDateFrom.setDate(adjustedReportDateFrom.getDate() - 1); // 將日期減一天
       filtered = filtered.filter(
-        (item) => new Date(item.reportDate) >= new Date(filters.reportDateFrom)
+        (item) => new Date(item.reportDate) > adjustedReportDateFrom
       );
     }
     if (filters.reportDateTo) {
@@ -68,7 +98,9 @@ function CaseManagement() {
       );
     }
     if (filters.source) {
-      filtered = filtered.filter((item) => item.source.includes(filters.source));
+      filtered = filtered.filter((item) =>
+        item.source.includes(filters.source)
+      );
     }
     if (filters.vehicleNumber) {
       filtered = filtered.filter((item) =>
@@ -101,10 +133,14 @@ function CaseManagement() {
       );
     }
     if (filters.status) {
-      filtered = filtered.filter((item) => item.status.includes(filters.status));
+      filtered = filtered.filter((item) =>
+        item.status.includes(filters.status)
+      );
     }
     if (filters.responsibleFactory) {
-      filtered = filtered.filter((item) => item.responsibleFactory.includes(filters.responsibleFactory));
+      filtered = filtered.filter((item) =>
+        item.responsibleFactory.includes(filters.responsibleFactory)
+      );
     }
     if (filters.uploadPipe) {
       filtered = filtered.filter((item) =>
@@ -153,10 +189,25 @@ function CaseManagement() {
             className="p-2 border rounded"
           >
             <option value="">行政區</option>
-            <option value="萬華區">萬華區</option>
             <option value="中正區">中正區</option>
+            <option value="大同區">大同區</option>
+            <option value="中山區">中山區</option>
+            <option value="松山區">松山區</option>
+            <option value="大安區">大安區</option>
+            <option value="萬華區">萬華區</option>
+            <option value="信義區">信義區</option>
+            <option value="士林區">士林區</option>
+            <option value="北投區">北投區</option>
+            <option value="內湖區">內湖區</option>
+            <option value="南港區">南港區</option>
+            <option value="文山區">文山區</option>
           </select>
           <div className="flex items-center space-x-2">
+            <img
+              src="/Images/show-calendar.gif"
+              alt="calendar"
+              className="h-8 w-8"
+            />
             <input
               type="date"
               name="reportDateFrom"
@@ -182,8 +233,10 @@ function CaseManagement() {
             className="p-2 border rounded"
           >
             <option value="">來源</option>
-            <option value="全部">全部</option>
-            <option value="內部">內部</option>
+            <option value="APP通報">APP通報</option>
+            <option value="車巡">車巡</option>
+            <option value="系統新增">系統新增</option>
+            <option value="機車">機車</option>
           </select>
           <input
             type="text"
@@ -217,7 +270,7 @@ function CaseManagement() {
           >
             <option value="">損壞項目</option>
             <option value="AC路面">AC路面</option>
-            <option value="混凝土">混凝土</option>
+            <option value="人行道及相關設施">人行道及相關設施</option>
           </select>
           <select
             name="damageLevel"
@@ -227,6 +280,7 @@ function CaseManagement() {
           >
             <option value="">損壞程度</option>
             <option value="輕">輕</option>
+            <option value="中">中</option>
             <option value="重">重</option>
           </select>
           <select
@@ -236,8 +290,6 @@ function CaseManagement() {
             className="p-2 border rounded"
           >
             <option value="">損壞情形</option>
-            <option value="裂縫">裂縫</option>
-            <option value="坑洞">坑洞</option>
           </select>
           <select
             name="status"
@@ -247,7 +299,7 @@ function CaseManagement() {
           >
             <option value="">狀態</option>
             <option value="待審">待審</option>
-            <option value="審核通過">審核通過</option>
+            <option value="通過">通過</option>
           </select>
           <select
             name="responsibleFactory"
@@ -256,8 +308,9 @@ function CaseManagement() {
             className="p-2 border rounded"
           >
             <option value="">廠商</option>
-            <option value="磊磊營造">磊磊營造</option>
-            <option value="某某公司">某某公司</option>
+            <option value="NRP-111-146-001(寬聯)">NRP-111-146-001(寬聯)</option>
+            <option value="PR001(盤碩營造)">PR001(盤碩營造)</option>
+            <option value="PR002(盤碩營造)">PR002(盤碩營造)</option>
           </select>
           <select
             name="uploadPipe"
@@ -266,7 +319,7 @@ function CaseManagement() {
             className="p-2 border rounded"
           >
             <option value="">上傳道管</option>
-            <option value="全部">全部</option>
+            <option value="失敗">失敗</option>
             <option value="是">是</option>
             <option value="否">否</option>
           </select>
@@ -274,8 +327,13 @@ function CaseManagement() {
         <div className="flex space-x-2">
           <button
             onClick={applyFilters}
-            className="p-2 bg-blue-500 text-white rounded shadow"
+            className="p-2 bg-blue-500 text-white rounded shadow w-20 flex"
           >
+            <img
+              src="/Images/icon-search.png"
+              alt="calendar"
+              className="h-5 w-5 mr-1"
+            />
             查詢
           </button>
           <button className="p-2 bg-green-500 text-white rounded shadow">
@@ -285,31 +343,25 @@ function CaseManagement() {
       </div>
 
       {/* Pagination Controls */}
-      <div className="flex justify-between items-center mt-4">
-        <button
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="p-2 bg-gray-200 rounded"
-        >
-          上一頁
-        </button>
-        <div>
-          第 {currentPage} 頁 | 共 {totalPages} 頁 | 共 {filteredData.length} 筆
-        </div>
-        <button
-          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-          disabled={currentPage === totalPages}
-          className="p-2 bg-gray-200 rounded"
-        >
-          下一頁
-        </button>
-      </div>
+      <PaginationComponent
+        currentPage={currentPage}
+        totalPages={totalPages}
+        setCurrentPage={setCurrentPage}
+      />
 
       {/* Table Display */}
-      <div className="bg-white rounded-md shadow-md p-4 overflow-x-auto">
+      <div className="bg-white rounded-md shadow-md p-4 overflow-x-auto mt-4">
         <table className="w-full text-center border-collapse">
           <thead>
             <tr className="bg-gray-200">
+              <th className="p-3 border">
+                全選
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={toggleSelectAll}
+                />
+              </th>
               <th className="p-3 border">結案</th>
               <th className="p-3 border">觀察案件</th>
               <th className="p-3 border">負責廠商</th>
@@ -328,20 +380,39 @@ function CaseManagement() {
           <tbody>
             {paginatedData.map((item, index) => (
               <tr key={index} className="hover:bg-gray-100">
-                <td className="p-3 border">{item.result}</td>
-                <td className="p-3 border">{item.observationCase ? "是" : "否"}</td>
-                <td className="p-3 border">{item.responsibleFactory}</td>
-                <td className="p-3 border">{item.inspectionNumber}</td>
-                <td className="p-3 border">{item.district}</td>
-                <td className="p-3 border">{item.roadSegment}</td>
-                <td className="p-3 border">{item.damageItem}</td>
-                <td className="p-3 border">{item.damageLevel}</td>
-                <td className="p-3 border">{item.reportDate}</td>
-                <td className="p-3 border">{item.status}</td>
-                <td className="p-3 border">{item.vehicleNumber}</td>
-                <td className="p-3 border">{item.postedPersonnel}</td>
                 <td className="p-3 border">
-                  <img src={item.thumbnail} alt="縮圖" className="w-16 h-auto" />
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.includes(item.inspectionNumber)}
+                    onChange={() => handleSelectItem(item.inspectionNumber)}
+                  />
+                </td>
+                <td className="p-3 border border-x-0">{item.result}</td>
+                <td className="p-3 border border-x-0">
+                  {item.observationCase ? "是" : "否"}
+                </td>
+                <td className="p-3 border border-x-0">
+                  {item.responsibleFactory}
+                </td>
+                <td className="p-3 border border-x-0">
+                  {item.inspectionNumber}
+                </td>
+                <td className="p-3 border border-x-0">{item.district}</td>
+                <td className="p-3 border border-x-0">{item.roadSegment}</td>
+                <td className="p-3 border border-x-0">{item.damageItem}</td>
+                <td className="p-3 border border-x-0">{item.damageLevel}</td>
+                <td className="p-3 border border-x-0">{item.reportDate}</td>
+                <td className="p-3 border border-x-0">{item.status}</td>
+                <td className="p-3 border border-x-0">{item.vehicleNumber}</td>
+                <td className="p-3 border border-x-0">
+                  {item.postedPersonnel}
+                </td>
+                <td className="p-3 border border-x-0">
+                  <img
+                    src={item.thumbnail}
+                    alt="縮圖"
+                    className="w-16 h-auto"
+                  />
                 </td>
               </tr>
             ))}
