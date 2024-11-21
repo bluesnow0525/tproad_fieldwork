@@ -2,8 +2,8 @@
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from config import SQLALCHEMY_DATABASE_URI
-from extensions import db
-from db_operations import DbOperator
+from backend.database.extensions import db
+from backend.database.db_operations import DbOperator
 from datetime import datetime
 import os
 

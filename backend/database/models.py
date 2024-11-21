@@ -1,5 +1,5 @@
 # models.py
-from extensions import db
+from backend.database.extensions import db
 
 class CaseInfor(db.Model):
     __tablename__ = 'caseinfor'

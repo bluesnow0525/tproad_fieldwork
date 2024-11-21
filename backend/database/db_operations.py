@@ -1,4 +1,4 @@
-from models import CaseInfor, ReportData
+from backend.database.models import CaseInfor, ReportData
 from datetime import datetime, timedelta
 
 class DbOperator:

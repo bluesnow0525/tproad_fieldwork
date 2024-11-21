@@ -1,4 +1,4 @@
-from db_operations import DbOperator
+from backend.database.db_operations import DbOperator
 from app import app, db  # 引入 Flask 應用程式和資料庫擴展
 
 def test_connection():
