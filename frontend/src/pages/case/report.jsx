@@ -25,11 +25,12 @@ function CaseReport() {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    fetch("/data/test_casereport.json")
+    fetch("http://localhost:5000/reportdata")
       .then((response) => response.json())
       .then((jsonData) => {
         setData(jsonData);
         setFilteredData(jsonData);
+        console.log(jsonData);
       });
   }, []);
 
@@ -110,9 +111,9 @@ function CaseReport() {
             className="p-2 border rounded w-48"
           >
             <option value="">廠商</option>
-            <option value="NRP-111-146-001(寬聯)">NRP-111-146-001(寬聯)</option>
-            <option value="PR001(盤碩營造)">PR001(盤碩營造)</option>
-            <option value="PR002(盤碩營造)">PR002(盤碩營造)</option>
+            <option value="NRP-111-146-001_寬聯">NRP-111-146-001(寬聯)</option>
+            <option value="PR001_盤碩營造">PR001(盤碩營造)</option>
+            <option value="PR002_盤碩營造">PR002(盤碩營造)</option>
           </select>
           <div className="flex items-center space-x-2">
             <img
@@ -179,15 +180,25 @@ function CaseReport() {
             {paginatedData.map((item, index) => (
               <tr key={index} className="hover:bg-gray-100">
                 <td className="p-3 border border-r-0">
-                  {item.responsibleFactory}
+                  {item.responsibleFactory.split("_")[1]}
                 </td>
                 <td className="p-3 border border-x-0">{item.reportDate}</td>
-                {["appLog", "appResult", "carLog", "carResult", "motorcycleLog", "motorcycleResult"].map((logType) => (
+                {[
+                  "appLog",
+                  "appResult",
+                  "carLog",
+                  "carResult",
+                  "motorcycleLog",
+                  "motorcycleResult",
+                ].map((logType) => (
                   <td key={logType} className="p-3 border border-x-0">
                     {item[logType] ? (
                       <>
                         {item[logType].xls && (
-                          <a href={item[logType].xls} download>
+                          <a
+                            href={`http://localhost:5000/files/xlsx/${item[logType].xls}`}
+                            download
+                          >
                             <img
                               src="/Images/ext_excel.png"
                               alt="XLS"
@@ -196,7 +207,10 @@ function CaseReport() {
                           </a>
                         )}
                         {item[logType].pdf && (
-                          <a href={item[logType].pdf} download>
+                          <a
+                            href={`http://localhost:5000/files/pdf/${item[logType].pdf}`}
+                            download
+                          >
                             <img
                               src="/Images/ext_pdf.png"
                               alt="PDF"

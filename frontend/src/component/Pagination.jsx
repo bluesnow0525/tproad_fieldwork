@@ -25,7 +25,7 @@ function PaginationComponent({ currentPage, totalPages, setCurrentPage }) {
             );
             setCurrentPage(page);
           }}
-          className="ml-1 p-1 border rounded w-10 text-center"
+          className="ml-1 p-1 border rounded w-14 text-center"
         />
         頁
       </div>

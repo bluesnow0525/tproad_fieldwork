@@ -2,15 +2,20 @@ import React, { useEffect, useState } from "react";
 import PaginationComponent from "../../component/Pagination";
 
 function CaseManagement() {
+  const today = new Date().toISOString().split("T")[0]; // 取得今天的日期 (格式: YYYY-MM-DD)
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1); // 將年份減一
+  const oneYearAgoDate = oneYearAgo.toISOString().split("T")[0];
+
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
-    observationCase: false,
+    notification: false,
     inspectionNumber: "",
     district: "",
-    reportDateFrom: "",
-    reportDateTo: "",
+    reportDateFrom: oneYearAgoDate,
+    reportDateTo: today,
     source: "",
     vehicleNumber: "",
     postedPersonnel: "",
@@ -28,13 +33,34 @@ function CaseManagement() {
   const itemsPerPage = 50;
 
   useEffect(() => {
-    fetch("/data/test_casemanagement.json")
-      .then((response) => response.json())
+    // 定義日期範圍
+    const requestData = {
+      startDate: filters.reportDateFrom,
+      endDate: filters.reportDateTo,
+    };
+
+    fetch("http://localhost:5000/caseinfor", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestData),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
       .then((jsonData) => {
         setData(jsonData);
         setFilteredData(jsonData);
+        console.log(jsonData);
+      })
+      .catch((error) => {
+        console.error("Error fetching caseinfor data:", error);
       });
-  }, []);
+  }, [filters.reportDateFrom, filters.reportDateTo]);
 
   const toggleSelectAll = () => {
     setSelectAll(!selectAll);
@@ -72,8 +98,8 @@ function CaseManagement() {
   const applyFilters = () => {
     let filtered = data;
 
-    if (filters.observationCase) {
-      filtered = filtered.filter((item) => item.observationCase);
+    if (filters.notification) {
+      filtered = filtered.filter((item) => item.notification);
     }
     if (filters.inspectionNumber) {
       filtered = filtered.filter((item) =>
@@ -167,8 +193,8 @@ function CaseManagement() {
           <label className="flex items-center space-x-2">
             <input
               type="checkbox"
-              name="observationCase"
-              checked={filters.observationCase}
+              name="notification"
+              checked={filters.notification}
               onChange={handleFilterChange}
               className="h-6 w-6"
             />
@@ -308,9 +334,9 @@ function CaseManagement() {
             className="p-2 border rounded"
           >
             <option value="">廠商</option>
-            <option value="NRP-111-146-001(寬聯)">NRP-111-146-001(寬聯)</option>
-            <option value="PR001(盤碩營造)">PR001(盤碩營造)</option>
-            <option value="PR002(盤碩營造)">PR002(盤碩營造)</option>
+            <option value="NRP-111-146-001_寬聯">NRP-111-146-001(寬聯)</option>
+            <option value="PR001_盤碩營造">PR001(盤碩營造)</option>
+            <option value="PR002_盤碩營造">PR002(盤碩營造)</option>
           </select>
           <select
             name="uploadPipe"
@@ -368,7 +394,9 @@ function CaseManagement() {
               <th className="p-3 border">巡查編號</th>
               <th className="p-3 border">行政區</th>
               <th className="p-3 border">巡查路段</th>
+              <th className="p-3 border">車道</th> {/* 新增車道 */}
               <th className="p-3 border">損壞項目</th>
+              <th className="p-3 border">損壞情形</th> {/* 新增損壞情形 */}
               <th className="p-3 border">損壞程度</th>
               <th className="p-3 border">報告日期</th>
               <th className="p-3 border">狀態</th>
@@ -387,32 +415,50 @@ function CaseManagement() {
                     onChange={() => handleSelectItem(item.inspectionNumber)}
                   />
                 </td>
-                <td className="p-3 border border-x-0">{item.result}</td>
+                <td className="p-3 border border-x-0">{item.result || ""}</td>
                 <td className="p-3 border border-x-0">
                   {item.observationCase ? "是" : "否"}
                 </td>
                 <td className="p-3 border border-x-0">
-                  {item.responsibleFactory}
+                  {item.responsibleFactory?.split("_")[1] || ""}
                 </td>
                 <td className="p-3 border border-x-0">
-                  {item.inspectionNumber}
+                  {item.inspectionNumber || ""}
                 </td>
-                <td className="p-3 border border-x-0">{item.district}</td>
-                <td className="p-3 border border-x-0">{item.roadSegment}</td>
-                <td className="p-3 border border-x-0">{item.damageItem}</td>
-                <td className="p-3 border border-x-0">{item.damageLevel}</td>
-                <td className="p-3 border border-x-0">{item.reportDate}</td>
-                <td className="p-3 border border-x-0">{item.status}</td>
-                <td className="p-3 border border-x-0">{item.vehicleNumber}</td>
+                <td className="p-3 border border-x-0">{item.district || ""}</td>
                 <td className="p-3 border border-x-0">
-                  {item.postedPersonnel}
+                  {item.roadSegment || ""}
+                </td>
+                <td className="p-3 border border-x-0">{item.lane || ""}</td>
+                <td className="p-3 border border-x-0">
+                  {item.damageItem || ""}
                 </td>
                 <td className="p-3 border border-x-0">
-                  <img
-                    src={item.thumbnail}
-                    alt="縮圖"
-                    className="w-16 h-auto"
-                  />
+                  {item.damageCondition || ""}
+                </td>
+                <td className="p-3 border border-x-0">
+                  {item.damageLevel || ""}
+                </td>
+                <td className="p-3 border border-x-0">
+                  {item.reportDate || ""}
+                </td>
+                <td className="p-3 border border-x-0">{item.status || ""}</td>
+                <td className="p-3 border border-x-0">
+                  {item.vehicleNumber || ""}
+                </td>
+                <td className="p-3 border border-x-0">
+                  {item.postedPersonnel || ""}
+                </td>
+                <td className="p-3 border border-x-0">
+                  {item.thumbnail ? (
+                    <img
+                      src={`http://localhost:5000/files/img/${item.thumbnail}`}
+                      alt="縮圖"
+                      className="w-32 h-20"
+                    />
+                  ) : (
+                    <span className="text-gray-400">無縮圖</span>
+                  )}
                 </td>
               </tr>
             ))}
