@@ -25,7 +25,7 @@ function CaseReport() {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    fetch("http://localhost:5000/reportdata")
+    fetch("http://localhost:5000/reportdata/read")
       .then((response) => response.json())
       .then((jsonData) => {
         setData(jsonData);
@@ -177,8 +177,8 @@ function CaseReport() {
             </tr>
           </thead>
           <tbody>
-            {paginatedData.map((item, index) => (
-              <tr key={index} className="hover:bg-gray-100">
+            {paginatedData.map((item) => (
+              <tr key={item.rid} className="hover:bg-gray-100">
                 <td className="p-3 border border-r-0">
                   {item.responsibleFactory.split("_")[1]}
                 </td>

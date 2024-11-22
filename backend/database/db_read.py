@@ -1,7 +1,7 @@
-from backend.database.models import CaseInfor, ReportData
+from .models import CaseInfor, ReportData
 from datetime import datetime, timedelta
 
-class DbOperator:
+class DB_read:
     def __init__(self, db_session):
         """
         初始化 DbOperator 並接受 SQLAlchemy 的 Session 物件
@@ -70,6 +70,7 @@ class DbOperator:
                                   "PR002_盤碩營造" if row["rcno"] == "PR002" else "未知工廠"
 
             formatted_data.append({
+                "rid":row["rid"],
                 "responsibleFactory": responsible_factory,
                 "reportDate": row["rdate"].strftime("%Y-%m-%d") if row["rdate"] else None,
                 "appLog": {
@@ -121,6 +122,7 @@ class DbOperator:
 
             # 格式化 JSON
             formatted_data.append({
+                "caid":row["caid"],
                 "result": result.strip(),
                 "notification": notification.strip(),
                 "responsibleFactory": responsible_factory.strip(),

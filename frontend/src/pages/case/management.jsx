@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import PaginationComponent from "../../component/Pagination";
+import EditModal from "../../component/Editmodal";
 
 function CaseManagement() {
   const today = new Date().toISOString().split("T")[0]; // 取得今天的日期 (格式: YYYY-MM-DD)
@@ -39,7 +40,7 @@ function CaseManagement() {
       endDate: filters.reportDateTo,
     };
 
-    fetch("http://localhost:5000/caseinfor", {
+    fetch("http://localhost:5000/caseinfor/read", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -66,7 +67,7 @@ function CaseManagement() {
     setSelectAll(!selectAll);
     if (!selectAll) {
       // 全選當前頁的項目
-      const allIdsOnPage = paginatedData.map((item) => item.inspectionNumber);
+      const allIdsOnPage = paginatedData.map((item) => item.caid);
       setSelectedItems(allIdsOnPage);
       console.log("選取的項目：", allIdsOnPage); // 在控制台顯示選取的項目
     } else {
@@ -87,6 +88,56 @@ function CaseManagement() {
     });
   };
 
+  const handleConfirmReview = () => {
+    if (!selectedItems.length) {
+      alert("請先勾選項目！");
+      return;
+    }
+
+    const confirmAction = window.confirm("確認審查通過？");
+    if (confirmAction) {
+      const updatedItems = selectedItems.map((caid) => ({
+        caid,
+        result: "是",
+      }));
+
+      // 發送更新請求至後端
+      fetch("http://localhost:5000/caseinfor/write", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedItems),
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("Failed to update data");
+          return response.json();
+        })
+        .then((result) => {
+          console.log("Review successful:", result);
+
+          // 更新本地數據
+          setData((prevData) =>
+            prevData.map((item) =>
+              selectedItems.includes(item.caid)
+                ? { ...item, result: "是" }
+                : item
+            )
+          );
+          setFilteredData((prevFilteredData) =>
+            prevFilteredData.map((item) =>
+              selectedItems.includes(item.caid)
+                ? { ...item, result: "是" }
+                : item
+            )
+          );
+
+          setSelectedItems([]); // 清空選取項目
+        })
+        .catch((error) => console.error("Error updating data:", error));
+    }
+  };
+
   const handleFilterChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFilters((prevFilters) => ({
@@ -99,7 +150,10 @@ function CaseManagement() {
     let filtered = data;
 
     if (filters.notification) {
-      filtered = filtered.filter((item) => item.notification);
+      filtered = filtered.filter((item) => item.notification === "是");
+    }
+    if (!filters.notification) {
+      filtered = filtered.filter((item) => item.notification === "否");
     }
     if (filters.inspectionNumber) {
       filtered = filtered.filter((item) =>
@@ -130,7 +184,7 @@ function CaseManagement() {
     }
     if (filters.vehicleNumber) {
       filtered = filtered.filter((item) =>
-        item.vehicleNumber.includes(filters.vehicleNumber)
+        item.vehicleNumber.includes(filters.vehicleNumber.toUpperCase())
       );
     }
     if (filters.postedPersonnel) {
@@ -184,6 +238,51 @@ function CaseManagement() {
   );
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  const openModal = (item) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedItem(null);
+  };
+
+  const handleEditConfirm = (updatedData) => {
+    console.log("Updated Data:", updatedData);
+    // 發送 POST 請求到後端
+    fetch("http://localhost:5000/caseinfor/write", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedData),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to update data");
+        return response.json();
+      })
+      .then((result) => {
+        console.log("Update successful:", result);
+        // 更新表格數據（根據需求可選擇重新獲取或直接更新狀態）
+        setData((prevData) =>
+          prevData.map((item) =>
+            item.caid === updatedData.caid ? { ...item, ...updatedData } : item
+          )
+        );
+
+        setFilteredData((prevFilteredData) =>
+          prevFilteredData.map((item) =>
+            item.caid === updatedData.caid ? { ...item, ...updatedData } : item
+          )
+        );
+      })
+      .catch((error) => console.error("Error updating data:", error));
+  };
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
@@ -375,8 +474,15 @@ function CaseManagement() {
         setCurrentPage={setCurrentPage}
       />
 
+      <button
+        onClick={handleConfirmReview}
+        className="p-2 bg-blue-500 text-white rounded shadow w-20 mt-4"
+      >
+        審查通過
+      </button>
+
       {/* Table Display */}
-      <div className="bg-white rounded-md shadow-md p-4 overflow-x-auto mt-4">
+      <div className="bg-white rounded-md shadow-md p-4 overflow-x-auto mt-2">
         <table className="w-full text-center border-collapse">
           <thead>
             <tr className="bg-gray-200">
@@ -406,18 +512,28 @@ function CaseManagement() {
             </tr>
           </thead>
           <tbody>
-            {paginatedData.map((item, index) => (
-              <tr key={index} className="hover:bg-gray-100">
-                <td className="p-3 border">
+            {paginatedData.map((item) => (
+              <tr
+                key={item.caid}
+                className="hover:bg-gray-100 cursor-pointer"
+                onClick={() => openModal(item)}
+              >
+                <td
+                  className="p-3 border"
+                  onClick={(event) => event.stopPropagation()}
+                >
                   <input
                     type="checkbox"
-                    checked={selectedItems.includes(item.inspectionNumber)}
-                    onChange={() => handleSelectItem(item.inspectionNumber)}
+                    checked={selectedItems.includes(item.caid)}
+                    onChange={(event) => {
+                      event.stopPropagation(); // 阻止冒泡
+                      handleSelectItem(item.caid); // 调用选择函数
+                    }}
                   />
                 </td>
                 <td className="p-3 border border-x-0">{item.result || ""}</td>
                 <td className="p-3 border border-x-0">
-                  {item.observationCase ? "是" : "否"}
+                  {item.notification === "是" ? "是" : "否"}
                 </td>
                 <td className="p-3 border border-x-0">
                   {item.responsibleFactory?.split("_")[1] || ""}
@@ -465,6 +581,13 @@ function CaseManagement() {
           </tbody>
         </table>
       </div>
+      {/* Edit Modal */}
+      <EditModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onConfirm={handleEditConfirm}
+        defaultValues={selectedItem || {}} // 預設值為選中的行數據
+      />
     </div>
   );
 }

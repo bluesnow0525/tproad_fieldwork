@@ -1,11 +1,11 @@
-from backend.database.db_operations import DbOperator
+from backend.database.db_read import DB_read
 from app import app, db  # 引入 Flask 應用程式和資料庫擴展
 
 def test_connection():
     with app.app_context():  # 設定應用程式上下文
         try:
             # 初始化 DbOperator
-            operator = DbOperator(db.session)
+            operator = DB_read(db.session)
             
             # 測試查詢 CaseInfor 資料表
             caseinfor_data = operator.select_all("caseinfor")
