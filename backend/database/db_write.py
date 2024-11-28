@@ -73,21 +73,41 @@ class DB_write:
             self.db_session.rollback()
             raise e
 
-    def write_reportdata(self, data):
+    def write_reportdata(self, rid, key, file_type, filename):
         """
-        新增或更新 ReportData 資料
-        :param data: 字典格式的資料，包含要新增或更新的欄位與值
+        更新指定的檔案欄位到 ReportData
+        :param rid: int, ReportData 表的主鍵
+        :param key: str, 更新的檔案類型（例如 'appLog', 'appResult', 'carLog', 'carResult', 'motorcycleLog', 'motorcycleResult'）
+        :param file_type: str, 檔案類型（例如 'xls' 或 'pdf'）
+        :param filename: str, 要存入的檔名
         """
-        if 'rid' in data:  # 更新操作（根據主鍵 rid）
-            record = self.db_session.query(ReportData).get(data['rid'])
-            if not record:
-                raise ValueError("更新失敗：找不到對應的 rid")
-            for key, value in data.items():
-                if hasattr(record, key):
-                    setattr(record, key, value)
-        else:  # 新增操作
-            # record = ReportData(**data)
-            # self.db_session.add(record)
-            pass
+        # 定義 key 到欄位的對應關係
+        field_mapping = {
+            "appLog": {"xlsx": "rfile_exc1", "pdf": "rfile_pdf1"},
+            "appResult": {"xlsx": "rfile_exc2", "pdf": "rfile_pdf2"},
+            "carLog": {"xlsx": "rfile_new1", "pdf": "rfile_new2"},
+            "carResult": {"xlsx": "rfile_exc1_1", "pdf": "rfile_pdf1_1"},
+            "motorcycleLog": {"xlsx": "rfile_exc2_1", "pdf": "rfile_pdf2_1"},
+            "motorcycleResult": {"xlsx": "rfile_exc2_2", "pdf": "rfile_pdf2_2"},
+        }
 
-        self.db_session.commit()
+        if key not in field_mapping or file_type not in field_mapping[key]:
+            raise ValueError(f"無效的 key 或 file_type: key={key}, file_type={file_type}")
+
+        # 找到對應的資料欄位
+        field_name = field_mapping[key][file_type]
+
+        # 查找記錄
+        record = self.db_session.query(ReportData).filter_by(rid=rid).first()
+        if not record:
+            raise ValueError(f"未找到 rid={rid} 的記錄")
+
+        # 更新欄位
+        setattr(record, field_name, filename)
+
+        # 提交變更
+        try:
+            self.db_session.commit()
+        except Exception as e:
+            self.db_session.rollback()
+            raise e

@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 import PaginationComponent from "../../component/Pagination";
-import EditModal from "../../component/Editmodal";
+import EditModal from "../../component/Case_Editmodal";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { url } from "../../assets/url";
 
 function CaseManagement() {
   const today = new Date().toISOString().split("T")[0]; // 取得今天的日期 (格式: YYYY-MM-DD)
-  const oneYearAgo = new Date();
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1); // 將年份減一
-  const oneYearAgoDate = oneYearAgo.toISOString().split("T")[0];
+  // const oneYearAgo = new Date();
+  // oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1); // 將年份減一
+  // const oneYearAgoDate = oneYearAgo.toISOString().split("T")[0];
 
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -15,7 +18,7 @@ function CaseManagement() {
     notification: false,
     inspectionNumber: "",
     district: "",
-    reportDateFrom: oneYearAgoDate,
+    reportDateFrom: today,
     reportDateTo: today,
     source: "",
     vehicleNumber: "",
@@ -32,6 +35,10 @@ function CaseManagement() {
   const [selectAll, setSelectAll] = useState(false); // 控制全選框
 
   const itemsPerPage = 50;
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
     // 定義日期範圍
@@ -40,7 +47,7 @@ function CaseManagement() {
       endDate: filters.reportDateTo,
     };
 
-    fetch("http://localhost:5000/caseinfor/read", {
+    fetch(`${url}/caseinfor/read`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -102,7 +109,7 @@ function CaseManagement() {
       }));
 
       // 發送更新請求至後端
-      fetch("http://localhost:5000/caseinfor/write", {
+      fetch(`${url}/caseinfor/write`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -144,16 +151,15 @@ function CaseManagement() {
       ...prevFilters,
       [name]: type === "checkbox" ? checked : value,
     }));
+    console.log(filters);
   };
 
   const applyFilters = () => {
-    let filtered = data;
+    // 始終基於原始數據進行篩選
+    let filtered = [...data];
 
     if (filters.notification) {
       filtered = filtered.filter((item) => item.notification === "是");
-    }
-    if (!filters.notification) {
-      filtered = filtered.filter((item) => item.notification === "否");
     }
     if (filters.inspectionNumber) {
       filtered = filtered.filter((item) =>
@@ -165,18 +171,18 @@ function CaseManagement() {
         item.district.includes(filters.district)
       );
     }
-    if (filters.reportDateFrom) {
-      const adjustedReportDateFrom = new Date(filters.reportDateFrom);
-      adjustedReportDateFrom.setDate(adjustedReportDateFrom.getDate() - 1); // 將日期減一天
-      filtered = filtered.filter(
-        (item) => new Date(item.reportDate) > adjustedReportDateFrom
-      );
-    }
-    if (filters.reportDateTo) {
-      filtered = filtered.filter(
-        (item) => new Date(item.reportDate) <= new Date(filters.reportDateTo)
-      );
-    }
+    // if (filters.reportDateFrom) {
+    //   const adjustedReportDateFrom = new Date(filters.reportDateFrom);
+    //   adjustedReportDateFrom.setDate(adjustedReportDateFrom.getDate() - 1); // 將日期減一天
+    //   filtered = filtered.filter(
+    //     (item) => new Date(item.reportDate) > adjustedReportDateFrom
+    //   );
+    // }
+    // if (filters.reportDateTo) {
+    //   filtered = filtered.filter(
+    //     (item) => new Date(item.reportDate) <= new Date(filters.reportDateTo)
+    //   );
+    // }
     if (filters.source) {
       filtered = filtered.filter((item) =>
         item.source.includes(filters.source)
@@ -184,7 +190,9 @@ function CaseManagement() {
     }
     if (filters.vehicleNumber) {
       filtered = filtered.filter((item) =>
-        item.vehicleNumber.includes(filters.vehicleNumber.toUpperCase())
+        item.vehicleNumber
+          .toUpperCase()
+          .includes(filters.vehicleNumber.toUpperCase())
       );
     }
     if (filters.postedPersonnel) {
@@ -228,19 +236,16 @@ function CaseManagement() {
       );
     }
 
+    // 更新篩選後的數據
     setFilteredData(filtered);
-    setCurrentPage(1); // Reset to the first page
+    setCurrentPage(1); // 重置到第一頁
+    console.log(filteredData);
   };
 
   const paginatedData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
 
   const openModal = (item) => {
     setSelectedItem(item);
@@ -255,7 +260,7 @@ function CaseManagement() {
   const handleEditConfirm = (updatedData) => {
     console.log("Updated Data:", updatedData);
     // 發送 POST 請求到後端
-    fetch("http://localhost:5000/caseinfor/write", {
+    fetch(`${url}/caseinfor/write`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -282,6 +287,20 @@ function CaseManagement() {
         );
       })
       .catch((error) => console.error("Error updating data:", error));
+  };
+
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "案件管理");
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const dataBlob = new Blob([excelBuffer], {
+      type: "application/octet-stream",
+    });
+    saveAs(dataBlob, "案件管理.xlsx");
   };
 
   return (
@@ -461,7 +480,10 @@ function CaseManagement() {
             />
             查詢
           </button>
-          <button className="p-2 bg-green-500 text-white rounded shadow">
+          <button
+            onClick={exportToExcel}
+            className="p-2 bg-green-500 text-white rounded shadow"
+          >
             下載excel表
           </button>
         </div>
@@ -472,6 +494,7 @@ function CaseManagement() {
         currentPage={currentPage}
         totalPages={totalPages}
         setCurrentPage={setCurrentPage}
+        totalItems={filteredData.length} // 傳入總資料筆數
       />
 
       <button
@@ -500,9 +523,9 @@ function CaseManagement() {
               <th className="p-3 border">巡查編號</th>
               <th className="p-3 border">行政區</th>
               <th className="p-3 border">巡查路段</th>
-              <th className="p-3 border">車道</th> {/* 新增車道 */}
+              <th className="p-3 border">車道</th> 
               <th className="p-3 border">損壞項目</th>
-              <th className="p-3 border">損壞情形</th> {/* 新增損壞情形 */}
+              <th className="p-3 border">損壞情形</th>
               <th className="p-3 border">損壞程度</th>
               <th className="p-3 border">報告日期</th>
               <th className="p-3 border">狀態</th>

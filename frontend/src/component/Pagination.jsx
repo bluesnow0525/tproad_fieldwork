@@ -1,7 +1,12 @@
 // src/components/PaginationComponent.jsx
 import React from "react";
 
-function PaginationComponent({ currentPage, totalPages, setCurrentPage }) {
+function PaginationComponent({
+  currentPage,
+  totalPages,
+  setCurrentPage,
+  totalItems, // 新增的總資料筆數
+}) {
   return (
     <div className="flex justify-between items-center mt-4">
       <button
@@ -12,7 +17,8 @@ function PaginationComponent({ currentPage, totalPages, setCurrentPage }) {
         上一頁
       </button>
       <div>
-        [第 {currentPage} 頁 | 共 {totalPages} 頁] 目前在第
+        [第 {currentPage} 頁 | 共 {totalPages} 頁]，共 {totalItems} 筆資料，
+        目前在第
         <input
           type="number"
           min="1"

@@ -1,4 +1,4 @@
-from .models import CaseInfor, ReportData
+from .models import CaseInfor, ReportData, RoadCase
 from datetime import datetime, timedelta
 
 class DB_read:
@@ -18,6 +18,8 @@ class DB_read:
             query = self.db_session.query(CaseInfor).limit(limit)
         elif table_name == "reportdata":
             query = self.db_session.query(ReportData).limit(limit)
+        elif table_name == "roadcase":
+            query = self.db_session.query(RoadCase).limit(limit)
         else:
             raise ValueError("無效的資料表名稱")
 
@@ -27,7 +29,7 @@ class DB_read:
             for result in results
         ]
 
-    def select_within_date_range(self, table_name, date_column, start_date, end_date, limit=10000, offset=0):
+    def select_within_date_range(self, table_name, date_column, start_date, end_date, limit=100000, offset=0):
         """
         查詢指定日期範圍內的資料，並支援分頁
         :param table_name: 資料表名稱
@@ -138,6 +140,31 @@ class DB_read:
                 "vehicleNumber": row["carno"].strip(),
                 "postedPersonnel": row["cafromno"][:5].strip() if row["cafromno"] and row["cafromno"][0] == "C" else None,
                 "thumbnail": row["caimg_1"].strip() if row["caimg_1"] else "default.png",
+            })
+        return formatted_data
+
+    def format_roadcase_data(self, raw_data):
+        """
+        將 Contract 資料表結果格式化為前端需求的 JSON 格式
+        """
+        formatted_data = []
+
+        for row in raw_data:
+            formatted_data.append({
+                "rcid": row['rcid'],
+                "status": "啟用" if row['rcstatus'] == "2" else "停用",
+                "caseCode": row['rcno'] or "",
+                "caseName": row['rcname'] or "",
+                "vendor": row['rconame'] or "",
+                "contractPeriod": f"{row['rcsdate'].strftime('%Y/%m/%d')} ~ {row['rcedate'].strftime('%Y/%m/%d')}" 
+                                if row['rcsdate'] and row['rcedate'] else "",
+                "contactPerson": row['rconame'] or "",
+                "contactPhone": row['rcotel'] or "",
+                "managerAccount": row['bmodid'] or "",
+                "managerName": row['rconame'] or "",
+                "contractStart": row['rcsdate'].strftime('%Y/%m/%d') if row['rcsdate'] else "",
+                "contractEnd": row['rcedate'].strftime('%Y/%m/%d') if row['rcedate'] else "",
+                "notes": row['rcnote'] or "",
             })
         return formatted_data
 

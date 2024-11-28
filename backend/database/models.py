@@ -73,3 +73,19 @@ class ReportData(db.Model):
     rfile_new1_2 = db.Column(db.String(50))
     rfile_new2_1 = db.Column(db.String(50))
     rfile_new2_2 = db.Column(db.String(50))
+
+class RoadCase(db.Model):
+    __tablename__ = 'roadcase'
+
+    rcid = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    rcstatus = db.Column(db.String(1), nullable=False)
+    rcno = db.Column(db.String(30))
+    rcname = db.Column(db.String(200))
+    rconame = db.Column(db.String(100))
+    rcotel = db.Column(db.String(20))
+    rcsdate = db.Column(db.Date)
+    rcedate = db.Column(db.Date)
+    rcnote = db.Column(db.String(500))
+    bmodid = db.Column(db.String(20))
+    bmoddate = db.Column(db.DateTime)
+    rrpttitle = db.Column(db.String(100))

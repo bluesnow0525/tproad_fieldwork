@@ -4,6 +4,7 @@ from database.extensions import db
 from database.config import SQLALCHEMY_DATABASE_URI
 from routes.caseinfor import caseinfor_bp
 from routes.reportdata import reportdata_bp
+from routes.roadcase import roadcase_bp
 from routes.files_routes import files_bp  # 匯入檔案相關路由
 
 def create_app():
@@ -20,6 +21,7 @@ def create_app():
     # 註冊 Blueprint
     app.register_blueprint(caseinfor_bp, url_prefix='/caseinfor')
     app.register_blueprint(reportdata_bp, url_prefix='/reportdata')
+    app.register_blueprint(roadcase_bp, url_prefix='/roadcase')
     app.register_blueprint(files_bp, url_prefix='/files')  # 註冊檔案相關路由
 
     return app

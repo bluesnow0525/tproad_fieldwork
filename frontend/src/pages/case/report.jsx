@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import PaginationComponent from "../../component/Pagination";
 import UploadModal from "../../component/Uploadmodal";
+import { url } from "../../assets/url";
 
 function CaseReport() {
   const [data, setData] = useState([]);
@@ -24,14 +25,18 @@ function CaseReport() {
 
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    fetch("http://localhost:5000/reportdata/read")
+  const fetchData = () => {
+    fetch(`${url}/reportdata/read`)
       .then((response) => response.json())
       .then((jsonData) => {
         setData(jsonData);
         setFilteredData(jsonData);
-        console.log(jsonData);
-      });
+      })
+      .catch((error) => console.error("Error fetching data:", error));
+  };  
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
   const handleFilterChange = (e) => {
@@ -85,12 +90,45 @@ function CaseReport() {
     setSelectedItem(null);
   };
 
-  const handleUploadConfirm = (item) => {
-    // 處理檔案上傳邏輯
-    console.log("Selected Item:", item);
-    console.log("Selected Files:", uploadFiles);
-    closeModal();
-  };
+  const handleUploadConfirm = () => {
+    if (!selectedItem) {
+      alert("請選擇一個項目！");
+      return;
+    }
+  
+    const formData = new FormData();
+    // 添加选中的项目 ID
+    formData.append("rid", selectedItem.rid);
+  
+    // 添加上传的文件
+    for (const [key, file] of Object.entries(uploadFiles)) {
+      if (file) {
+        formData.append(key, file);
+      }
+    }
+    console.log(formData)
+  
+    fetch(`${url}/reportdata/write`, {
+      method: "POST",
+      body: formData,
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("上傳失敗");
+        }
+        return response.json();
+      })
+      .then((result) => {
+        console.log("上傳成功：", result);
+        alert("檔案上傳成功！");
+        closeModal();
+        fetchData();
+      })
+      .catch((error) => {
+        console.error("上傳錯誤：", error);
+        alert("檔案上傳失敗！");
+      });
+  };  
 
   const paginatedData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
@@ -158,6 +196,7 @@ function CaseReport() {
         currentPage={currentPage}
         totalPages={totalPages}
         setCurrentPage={setCurrentPage}
+        totalItems={filteredData.length}
       />
 
       {/* Table Display */}
