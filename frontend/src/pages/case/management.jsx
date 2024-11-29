@@ -7,14 +7,21 @@ import { url } from "../../assets/url";
 
 function CaseManagement() {
   const today = new Date().toISOString().split("T")[0]; // 取得今天的日期 (格式: YYYY-MM-DD)
-  // const oneYearAgo = new Date();
-  // oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1); // 將年份減一
-  // const oneYearAgoDate = oneYearAgo.toISOString().split("T")[0];
 
-  const [data, setData] = useState([]);
+  // const [data, setData] = useState([]);
+  const [sortConfig, setSortConfig] = useState({
+    key: "", // Column to sort by
+    direction: "asc", // Sorting direction: "asc" or "desc"
+  });
+  const [loading, setLoading] = useState(false);
+
   const [filteredData, setFilteredData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
+    caid: "",
+    result: "",
+    lane: "",
+    thumbnail: "",
     notification: false,
     inspectionNumber: "",
     district: "",
@@ -29,7 +36,7 @@ function CaseManagement() {
     damageCondition: "",
     status: "",
     responsibleFactory: "",
-    uploadPipe: "",
+    // uploadPipe: "",
   });
   const [selectedItems, setSelectedItems] = useState([]); // 存儲被選中的項目 ID
   const [selectAll, setSelectAll] = useState(false); // 控制全選框
@@ -42,10 +49,8 @@ function CaseManagement() {
 
   useEffect(() => {
     // 定義日期範圍
-    const requestData = {
-      startDate: filters.reportDateFrom,
-      endDate: filters.reportDateTo,
-    };
+    const requestData = filters;
+    setLoading(true);
 
     fetch(`${url}/caseinfor/read`, {
       method: "POST",
@@ -54,21 +59,27 @@ function CaseManagement() {
       },
       body: JSON.stringify(requestData),
     })
-      .then((response) => {
+      .then(async (response) => {
         if (!response.ok) {
-          throw new Error("Network response was not ok");
+          // 如果 response 非 OK，嘗試解析錯誤訊息
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Unknown error occurred");
         }
         return response.json();
       })
       .then((jsonData) => {
-        setData(jsonData);
         setFilteredData(jsonData);
         console.log(jsonData);
       })
       .catch((error) => {
-        console.error("Error fetching caseinfor data:", error);
+        console.error("Error fetching caseinfor data:", error.message);
+        // 可以在這裡設置錯誤狀態以便顯示在 UI 上
+        setError(error.message);
+      })
+      .finally(() => {
+        setLoading(false); // 完成 Loading
       });
-  }, [filters.reportDateFrom, filters.reportDateTo]);
+  }, []);
 
   const toggleSelectAll = () => {
     setSelectAll(!selectAll);
@@ -124,13 +135,6 @@ function CaseManagement() {
           console.log("Review successful:", result);
 
           // 更新本地數據
-          setData((prevData) =>
-            prevData.map((item) =>
-              selectedItems.includes(item.caid)
-                ? { ...item, result: "是" }
-                : item
-            )
-          );
           setFilteredData((prevFilteredData) =>
             prevFilteredData.map((item) =>
               selectedItems.includes(item.caid)
@@ -155,91 +159,33 @@ function CaseManagement() {
   };
 
   const applyFilters = () => {
-    // 始終基於原始數據進行篩選
-    let filtered = [...data];
+    const requestData = filters;
+    setLoading(true);
 
-    if (filters.notification) {
-      filtered = filtered.filter((item) => item.notification === "是");
-    }
-    if (filters.inspectionNumber) {
-      filtered = filtered.filter((item) =>
-        item.inspectionNumber.includes(filters.inspectionNumber)
-      );
-    }
-    if (filters.district) {
-      filtered = filtered.filter((item) =>
-        item.district.includes(filters.district)
-      );
-    }
-    // if (filters.reportDateFrom) {
-    //   const adjustedReportDateFrom = new Date(filters.reportDateFrom);
-    //   adjustedReportDateFrom.setDate(adjustedReportDateFrom.getDate() - 1); // 將日期減一天
-    //   filtered = filtered.filter(
-    //     (item) => new Date(item.reportDate) > adjustedReportDateFrom
-    //   );
-    // }
-    // if (filters.reportDateTo) {
-    //   filtered = filtered.filter(
-    //     (item) => new Date(item.reportDate) <= new Date(filters.reportDateTo)
-    //   );
-    // }
-    if (filters.source) {
-      filtered = filtered.filter((item) =>
-        item.source.includes(filters.source)
-      );
-    }
-    if (filters.vehicleNumber) {
-      filtered = filtered.filter((item) =>
-        item.vehicleNumber
-          .toUpperCase()
-          .includes(filters.vehicleNumber.toUpperCase())
-      );
-    }
-    if (filters.postedPersonnel) {
-      filtered = filtered.filter((item) =>
-        item.postedPersonnel.includes(filters.postedPersonnel)
-      );
-    }
-    if (filters.roadSegment) {
-      filtered = filtered.filter((item) =>
-        item.roadSegment.includes(filters.roadSegment)
-      );
-    }
-    if (filters.damageItem) {
-      filtered = filtered.filter((item) =>
-        item.damageItem.includes(filters.damageItem)
-      );
-    }
-    if (filters.damageLevel) {
-      filtered = filtered.filter((item) =>
-        item.damageLevel.includes(filters.damageLevel)
-      );
-    }
-    if (filters.damageCondition) {
-      filtered = filtered.filter((item) =>
-        item.damageCondition.includes(filters.damageCondition)
-      );
-    }
-    if (filters.status) {
-      filtered = filtered.filter((item) =>
-        item.status.includes(filters.status)
-      );
-    }
-    if (filters.responsibleFactory) {
-      filtered = filtered.filter((item) =>
-        item.responsibleFactory.includes(filters.responsibleFactory)
-      );
-    }
-    if (filters.uploadPipe) {
-      filtered = filtered.filter((item) =>
-        item.uploadPipe.includes(filters.uploadPipe)
-      );
-    }
-
-    // 更新篩選後的數據
-    setFilteredData(filtered);
-    setCurrentPage(1); // 重置到第一頁
-    console.log(filteredData);
+    fetch(`${url}/caseinfor/read`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestData),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((jsonData) => {
+        // setData(jsonData);
+        setFilteredData(jsonData);
+        console.log(jsonData);
+      })
+      .catch((error) => {
+        console.error("Error fetching caseinfor data:", error);
+      })
+      .finally(() => {
+        setLoading(false); // 完成 Loading
+      });
   };
 
   const paginatedData = filteredData.slice(
@@ -274,11 +220,6 @@ function CaseManagement() {
       .then((result) => {
         console.log("Update successful:", result);
         // 更新表格數據（根據需求可選擇重新獲取或直接更新狀態）
-        setData((prevData) =>
-          prevData.map((item) =>
-            item.caid === updatedData.caid ? { ...item, ...updatedData } : item
-          )
-        );
 
         setFilteredData((prevFilteredData) =>
           prevFilteredData.map((item) =>
@@ -301,6 +242,26 @@ function CaseManagement() {
       type: "application/octet-stream",
     });
     saveAs(dataBlob, "案件管理.xlsx");
+  };
+
+  const applySorting = (key) => {
+    setSortConfig((prevSortConfig) => {
+      const newDirection =
+        prevSortConfig.key === key && prevSortConfig.direction === "asc"
+          ? "desc"
+          : "asc";
+      return { key, direction: newDirection };
+    });
+
+    // Perform sorting
+    const sortedData = [...filteredData].sort((a, b) => {
+      if (!a[key] || !b[key]) return 0; // Handle undefined or null values
+      if (a[key] < b[key]) return sortConfig.direction === "asc" ? -1 : 1;
+      if (a[key] > b[key]) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    setFilteredData(sortedData);
   };
 
   return (
@@ -370,7 +331,7 @@ function CaseManagement() {
               className="p-2 border rounded"
             />
           </div>
-          <select
+          {/* <select
             name="source"
             value={filters.source}
             onChange={handleFilterChange}
@@ -381,7 +342,7 @@ function CaseManagement() {
             <option value="車巡">車巡</option>
             <option value="系統新增">系統新增</option>
             <option value="機車">機車</option>
-          </select>
+          </select> */}
           <input
             type="text"
             name="vehicleNumber"
@@ -456,7 +417,7 @@ function CaseManagement() {
             <option value="PR001_盤碩營造">PR001(盤碩營造)</option>
             <option value="PR002_盤碩營造">PR002(盤碩營造)</option>
           </select>
-          <select
+          {/* <select
             name="uploadPipe"
             value={filters.uploadPipe}
             onChange={handleFilterChange}
@@ -466,7 +427,7 @@ function CaseManagement() {
             <option value="失敗">失敗</option>
             <option value="是">是</option>
             <option value="否">否</option>
-          </select>
+          </select> */}
         </div>
         <div className="flex space-x-2">
           <button
@@ -507,7 +468,7 @@ function CaseManagement() {
       {/* Table Display */}
       <div className="bg-white rounded-md shadow-md p-4 overflow-x-auto mt-2">
         <table className="w-full text-center border-collapse">
-          <thead>
+          <thead className="whitespace-nowrap">
             <tr className="bg-gray-200">
               <th className="p-3 border">
                 全選
@@ -515,21 +476,92 @@ function CaseManagement() {
                   type="checkbox"
                   checked={selectAll}
                   onChange={toggleSelectAll}
+                  className="ml-2"
                 />
               </th>
               <th className="p-3 border">結案</th>
               <th className="p-3 border">觀察案件</th>
-              <th className="p-3 border">負責廠商</th>
-              <th className="p-3 border">巡查編號</th>
-              <th className="p-3 border">行政區</th>
-              <th className="p-3 border">巡查路段</th>
-              <th className="p-3 border">車道</th> 
+              <th className="p-3 border">
+                報告日期
+                <button
+                  onClick={() => applySorting("reportDate")}
+                  className="ml-2 text-sm text-blue-500"
+                >
+                  <img
+                    src="/Images/arrow_D.png"
+                    alt="arrow"
+                    className="h-3 w-3 mr-1"
+                  />
+                </button>
+              </th>
+              <th className="p-3 border">
+                負責廠商
+                <button
+                  onClick={() => applySorting("responsibleFactory")}
+                  className="ml-2 text-sm text-blue-500"
+                >
+                  <img
+                    src="/Images/arrow_D.png"
+                    alt="arrow"
+                    className="h-3 w-3 mr-1"
+                  />
+                </button>
+              </th>
+              <th className="p-3 border">
+                巡查編號
+                <button
+                  onClick={() => applySorting("inspectionNumber")}
+                  className="ml-2 text-sm text-blue-500"
+                >
+                  <img
+                    src="/Images/arrow_D.png"
+                    alt="arrow"
+                    className="h-3 w-3 mr-1"
+                  />
+                </button>
+              </th>
+              <th className="p-3 border">
+                行政區
+                <button
+                  onClick={() => applySorting("district")}
+                  className="ml-2 text-sm text-blue-500"
+                >
+                  <img
+                    src="/Images/arrow_D.png"
+                    alt="arrow"
+                    className="h-3 w-3 mr-1"
+                  />
+                </button>
+              </th>
+              <th className="p-3 border">
+                巡查路段
+                <button
+                  onClick={() => applySorting("roadSegment")}
+                  className="ml-2 text-sm text-blue-500"
+                >
+                  <img
+                    src="/Images/arrow_D.png"
+                    alt="arrow"
+                    className="h-3 w-3 mr-1"
+                  />
+                </button>
+              </th>
               <th className="p-3 border">損壞項目</th>
-              <th className="p-3 border">損壞情形</th>
               <th className="p-3 border">損壞程度</th>
-              <th className="p-3 border">報告日期</th>
-              <th className="p-3 border">狀態</th>
-              <th className="p-3 border">車號</th>
+              <th className="p-3 border">損壞情形</th>
+              <th className="p-3 border">
+                車號
+                <button
+                  onClick={() => applySorting("vehicleNumber")}
+                  className="ml-2 text-sm text-blue-500"
+                >
+                  <img
+                    src="/Images/arrow_D.png"
+                    alt="arrow"
+                    className="h-3 w-3 mr-1"
+                  />
+                </button>
+              </th>
               <th className="p-3 border">登載人員</th>
               <th className="p-3 border">縮圖</th>
             </tr>
@@ -549,8 +581,8 @@ function CaseManagement() {
                     type="checkbox"
                     checked={selectedItems.includes(item.caid)}
                     onChange={(event) => {
-                      event.stopPropagation(); // 阻止冒泡
-                      handleSelectItem(item.caid); // 调用选择函数
+                      event.stopPropagation();
+                      handleSelectItem(item.caid);
                     }}
                   />
                 </td>
@@ -559,7 +591,10 @@ function CaseManagement() {
                   {item.notification === "是" ? "是" : "否"}
                 </td>
                 <td className="p-3 border border-x-0">
-                  {item.responsibleFactory?.split("_")[1] || ""}
+                  {item.reportDate || ""}
+                </td>
+                <td className="p-3 border border-x-0">
+                  {item.responsibleFactory || ""}
                 </td>
                 <td className="p-3 border border-x-0">
                   {item.inspectionNumber || ""}
@@ -568,27 +603,22 @@ function CaseManagement() {
                 <td className="p-3 border border-x-0">
                   {item.roadSegment || ""}
                 </td>
-                <td className="p-3 border border-x-0">{item.lane || ""}</td>
                 <td className="p-3 border border-x-0">
                   {item.damageItem || ""}
-                </td>
-                <td className="p-3 border border-x-0">
-                  {item.damageCondition || ""}
                 </td>
                 <td className="p-3 border border-x-0">
                   {item.damageLevel || ""}
                 </td>
                 <td className="p-3 border border-x-0">
-                  {item.reportDate || ""}
+                  {item.damageCondition || ""}
                 </td>
-                <td className="p-3 border border-x-0">{item.status || ""}</td>
                 <td className="p-3 border border-x-0">
                   {item.vehicleNumber || ""}
                 </td>
                 <td className="p-3 border border-x-0">
                   {item.postedPersonnel || ""}
                 </td>
-                <td className="p-3 border border-x-0">
+                <td className="p-3 border">
                   {item.thumbnail ? (
                     <img
                       src={`http://localhost:5000/files/img/${item.thumbnail}`}
@@ -604,6 +634,7 @@ function CaseManagement() {
           </tbody>
         </table>
       </div>
+
       {/* Edit Modal */}
       <EditModal
         isOpen={isModalOpen}
@@ -611,6 +642,11 @@ function CaseManagement() {
         onConfirm={handleEditConfirm}
         defaultValues={selectedItem || {}} // 預設值為選中的行數據
       />
+      {loading && (
+        <div className="fixed top-0 left-0 w-full h-full bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="loader border-t-4 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
+        </div>
+      )}
     </div>
   );
 }

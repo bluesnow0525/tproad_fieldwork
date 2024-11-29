@@ -27,9 +27,10 @@ function SystemManagementBidding() {
       .then((jsonData) => {
         setData(jsonData);
         setFilteredData(jsonData);
+        console.log(jsonData)
       })
       .catch((error) => console.error("Error fetching data:", error));
-  };  
+  };
 
   useEffect(() => {
     fetchData();
@@ -152,6 +153,11 @@ function SystemManagementBidding() {
             onChange={handleFilterChange}
             className="p-2 border rounded w-64"
           />
+          <img
+            src="/Images/show-calendar.gif"
+            alt="calendar"
+            className="h-8 w-8"
+          />
           <input
             type="date"
             name="dateFrom"
@@ -169,9 +175,14 @@ function SystemManagementBidding() {
             className="p-2 border rounded"
           />
           <button
-            className="p-2 bg-blue-500 text-white rounded shadow"
+            className="p-2 bg-blue-500 text-white rounded shadow flex"
             onClick={applyFilters}
           >
+            <img
+              src="/Images/icon-search.png"
+              alt="calendar"
+              className="h-5 w-5 mr-1"
+            />
             查詢
           </button>
         </div>
@@ -206,9 +217,14 @@ function SystemManagementBidding() {
                 <td className="p-3 border">{item.contractPeriod}</td>
                 <td className="p-3 border">
                   <button
-                    className="p-2 bg-blue-500 text-white rounded shadow"
+                    className="p-2 bg-blue-500 text-white rounded shadow flex"
                     onClick={() => openModal(item)}
                   >
+                    <img
+                      src="/Images/icon_revise_b.png"
+                      alt="revise"
+                      className="h-5 w-5 mr-1"
+                    />
                     編輯
                   </button>
                 </td>

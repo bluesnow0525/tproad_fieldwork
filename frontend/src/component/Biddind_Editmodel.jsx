@@ -1,18 +1,52 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 function EditModal({ isOpen, onClose, selectedItem, onSave }) {
-  const [formData, setFormData] = useState({ ...selectedItem });
+  const [formData, setFormData] = useState({});
+
+  // 當 selectedItem 改變時，更新 formData
+  useEffect(() => {
+    if (selectedItem) {
+      setFormData({ ...selectedItem });
+    }
+  }, [selectedItem]);
+
+  // 格式化日期為 YYYY-MM-DD（用於 <input type="date">）
+  const formatDateToInput = (dateString) => {
+    if (!dateString) return ""; // 若無日期，返回空字串
+    const parts = dateString.split("/");
+    if (parts.length !== 3) return ""; // 確保日期有 3 部分
+    const [year, month, day] = parts;
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  };
+
+  // 格式化日期為 YYYY/MM/DD（用於存回後端）
+  const formatDateFromInput = (dateString) => {
+    if (!dateString) return ""; // 若無日期，返回空字串
+    const parts = dateString.split("-");
+    if (parts.length !== 3) return ""; // 確保日期有 3 部分
+    const [year, month, day] = parts;
+    return `${year}/${month}/${day}`;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    // 日期欄位格式化為 YYYY/MM/DD
+    if (name === "contractStart" || name === "contractEnd") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: formatDateFromInput(value),
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSave = () => {
-    onSave(formData);
+    onSave(formData); // 儲存時傳回處理好的 formData
   };
 
   if (!isOpen) return null;
@@ -27,7 +61,7 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
             <input
               type="text"
               name="caseCode"
-              value={formData.caseCode}
+              value={formData.caseCode || ""}
               onChange={handleChange}
               className="p-2 border rounded"
             />
@@ -37,7 +71,7 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
             <input
               type="text"
               name="caseName"
-              value={formData.caseName}
+              value={formData.caseName || ""}
               onChange={handleChange}
               className="p-2 border rounded"
             />
@@ -47,7 +81,7 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
             <input
               type="text"
               name="vendor"
-              value={formData.vendor}
+              value={formData.vendor || ""}
               onChange={handleChange}
               className="p-2 border rounded"
             />
@@ -57,7 +91,7 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
             <input
               type="text"
               name="contactPerson"
-              value={formData.contactPerson}
+              value={formData.contactPerson || ""}
               onChange={handleChange}
               className="p-2 border rounded"
             />
@@ -67,7 +101,7 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
             <input
               type="text"
               name="contactPhone"
-              value={formData.contactPhone}
+              value={formData.contactPhone || ""}
               onChange={handleChange}
               className="p-2 border rounded"
             />
@@ -77,7 +111,7 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
             <input
               type="date"
               name="contractStart"
-              value={formData.contractStart}
+              value={formatDateToInput(formData.contractStart) || ""}
               onChange={handleChange}
               className="p-2 border rounded"
             />
@@ -87,7 +121,7 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
             <input
               type="date"
               name="contractEnd"
-              value={formData.contractEnd}
+              value={formatDateToInput(formData.contractEnd) || ""}
               onChange={handleChange}
               className="p-2 border rounded"
             />
@@ -96,7 +130,7 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
             備註
             <textarea
               name="notes"
-              value={formData.notes}
+              value={formData.notes || ""}
               onChange={handleChange}
               className="p-2 border rounded"
             />

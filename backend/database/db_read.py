@@ -101,47 +101,6 @@ class DB_read:
                 },
             })
         return formatted_data
-    
-    def format_caseinfor_data(self, raw_data):
-        """
-        將 CaseInfor 資料表結果格式化為指定 JSON 格式，並確保所有回傳文字不含空格
-        """
-        formatted_data = []
-        for row in raw_data:
-            # 設定 result 與 notification
-            result = "是" if row["caifend"] == "Y" else "否"
-            notification = "是" if row["isObserve"] == "Y" else "否"
-
-            # 負責廠商
-            responsible_factory = "NRP-111-146-001_寬聯" if row["rcno"] == "NRP-111-146-001" else \
-                                  "PR001_盤碩營造" if row["rcno"] == "PR001" else \
-                                  "PR002_盤碩營造" if row["rcno"] == "PR002" else "未知工廠"
-
-            # 根據 cabaddegree 設定損壞等級
-            damage_level = "輕" if row["cabaddegree"].strip() == "1" else \
-                        "中" if row["cabaddegree"].strip() == "2" else \
-                        "重" if row["cabaddegree"].strip() == "3" else "未知"
-
-            # 格式化 JSON
-            formatted_data.append({
-                "caid":row["caid"],
-                "result": result.strip(),
-                "notification": notification.strip(),
-                "responsibleFactory": responsible_factory.strip(),
-                "inspectionNumber": row["casno"].strip(),
-                "district": row["caDistrict"].strip(),
-                "roadSegment": row["caAddr"].strip(),
-                "damageItem": "AC路面" if row["catype"].strip() == "A" else "人行道及相關設施",
-                "lane": f"順向({row['caroadNum']})" if row["caroadDirect"] else "",
-                "damageLevel": damage_level.strip(),
-                "damageCondition": row["camemo"].strip() if row["camemo"] == "F" else "",
-                "reportDate": row["cadate"].strftime("%Y/%m/%d") if row["cadate"] else None,
-                "status": "待審" if row["castatus"].strip() == "0" else "通過",
-                "vehicleNumber": row["carno"].strip(),
-                "postedPersonnel": row["cafromno"][:5].strip() if row["cafromno"] and row["cafromno"][0] == "C" else None,
-                "thumbnail": row["caimg_1"].strip() if row["caimg_1"] else "default.png",
-            })
-        return formatted_data
 
     def format_roadcase_data(self, raw_data):
         """
