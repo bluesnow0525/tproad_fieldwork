@@ -3,10 +3,22 @@ import React, { useState, useEffect } from "react";
 function EditModal({ isOpen, onClose, selectedItem, onSave }) {
   const [formData, setFormData] = useState({});
 
-  // 當 selectedItem 改變時，更新 formData
+  // 當 `selectedItem` 改變時，更新 `formData`
   useEffect(() => {
     if (selectedItem) {
       setFormData({ ...selectedItem });
+    } else {
+      // 初始化為空數據
+      setFormData({
+        caseCode: "",
+        caseName: "",
+        vendor: "",
+        contactPerson: "",
+        contactPhone: "",
+        contractStart: "",
+        contractEnd: "",
+        notes: "",
+      });
     }
   }, [selectedItem]);
 
@@ -46,7 +58,7 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
   };
 
   const handleSave = () => {
-    onSave(formData); // 儲存時傳回處理好的 formData
+    onSave(formData); // 儲存時傳回處理好的 `formData`
   };
 
   if (!isOpen) return null;
@@ -54,7 +66,9 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-md shadow-lg p-6 w-[600px]">
-        <h3 className="text-lg font-semibold mb-4">編輯標案</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          {selectedItem ? "編輯標案" : "新增標案"}
+        </h3>
         <div className="grid grid-cols-2 gap-4">
           <label className="flex flex-col">
             專案代碼

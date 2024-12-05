@@ -231,18 +231,67 @@ function CaseManagement() {
   };
 
   const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(filteredData);
+    const worksheet = XLSX.utils.json_to_sheet(filteredData.map((item) => ({
+      流水號: item.caid,
+      巡查編號: item.inspectionNumber,
+      結案: item.result,
+      結案原因: "", // Add appropriate field if applicable
+      上傳市府: "", // Add appropriate field if applicable
+      案件來源: "", // Add appropriate field if applicable
+      專案代碼: item.responsibleFactory,
+      查報日期: item.reportDate,
+      授權之token: "", // Add appropriate field if applicable
+      觀察案件: item.notification,
+      標案行政區: item.district,
+      巡查路段: item.roadSegment,
+      地址: "", // Add appropriate field if applicable
+      車道方向: item.lane,
+      第幾車道: "", // Add appropriate field if applicable
+      損壞項目: item.damageItem,
+      損壞情形: item.damageCondition,
+      損壞程度: item.damageLevel,
+      損壞說明: "", // Add appropriate field if applicable
+      經度: "", // Add appropriate field if applicable
+      緯度: "", // Add appropriate field if applicable
+      施工前遠景照片: item.thumbnail,
+      施工後遠景照片: "", // Add appropriate field if applicable
+      建立日期: "", // Add appropriate field if applicable
+      登載人員帳號: "", // Add appropriate field if applicable
+      登載人員: item.postedPersonnel,
+      紀錄來源: "", // Add appropriate field if applicable
+      車號: item.vehicleNumber,
+      狀態: item.status,
+      長: "", // Add appropriate field if applicable
+      寬: "", // Add appropriate field if applicable
+      面積: "", // Add appropriate field if applicable
+      門牌遠景: "", // Add appropriate field if applicable
+      查報日期存到時間: "", // Add appropriate field if applicable
+    })));
+  
+    // 自動調整欄位寬度
+    const colWidths = Object.keys(worksheet).reduce((acc, key) => {
+      if (key[0] === '!') return acc;
+      const colIndex = key.replace(/[0-9]/g, ''); // 提取列標
+      const value = worksheet[key].v || "";
+      acc[colIndex] = Math.max(acc[colIndex] || 10, value.toString().length);
+      return acc;
+    }, {});
+  
+    worksheet['!cols'] = Object.values(colWidths).map((width) => ({ wch: width + 5 }));
+  
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "案件管理");
     const excelBuffer = XLSX.write(workbook, {
       bookType: "xlsx",
       type: "array",
     });
+  
     const dataBlob = new Blob([excelBuffer], {
       type: "application/octet-stream",
     });
+  
     saveAs(dataBlob, "案件管理.xlsx");
-  };
+  };  
 
   const applySorting = (key) => {
     setSortConfig((prevSortConfig) => {

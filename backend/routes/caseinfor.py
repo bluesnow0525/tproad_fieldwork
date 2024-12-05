@@ -37,7 +37,11 @@ def get_caseinfor():
 
     for column, value in db_filters.items():
         if value and hasattr(CaseInfor, column):  # 忽略空值條件
-            conditions.append(getattr(CaseInfor, column) == value)
+            # 如果是字符串，默認使用模糊搜尋
+            if isinstance(value, str):
+                conditions.append(getattr(CaseInfor, column).like(f"%{value}%"))
+            else:
+                conditions.append(getattr(CaseInfor, column) == value)
 
     # 查詢資料庫
     query = db.session.query(CaseInfor)

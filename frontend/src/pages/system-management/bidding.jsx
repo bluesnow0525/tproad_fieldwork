@@ -20,6 +20,9 @@ function SystemManagementBidding() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
+  const [selectAll, setSelectAll] = useState(false);
+  const [selectedItems, setSelectedItems] = useState([]);
+
   // Fetch API 數據
   const fetchData = () => {
     fetch(`${url}/roadcase/read`)
@@ -122,6 +125,57 @@ function SystemManagementBidding() {
       .catch((error) => console.error("Error updating item:", error));
   };
 
+  const toggleSelectAll = () => {
+    setSelectAll(!selectAll);
+    if (!selectAll) {
+      // 全選當前頁的項目
+      const allIdsOnPage = paginatedData.map((item) => item.rcid);
+      setSelectedItems(allIdsOnPage);
+    } else {
+      // 清空選中的項目
+      setSelectedItems([]);
+    }
+  };
+
+  const handleSelectItem = (id) => {
+    setSelectAll(false); // 取消全選的狀態
+    setSelectedItems((prevSelected) => {
+      const newSelected = prevSelected.includes(id)
+        ? prevSelected.filter((item) => item !== id)
+        : [...prevSelected, id];
+      return newSelected;
+    });
+  };
+
+  const handleDelete = () => {
+    if (!selectedItems.length) {
+      alert("請先勾選項目！");
+      return;
+    }
+
+    const confirmAction = window.confirm("確認刪除選中的項目？");
+    if (confirmAction) {
+      fetch(`${url}/roadcase/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ rcid: selectedItems }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to delete items");
+          }
+          return response.json();
+        })
+        .then(() => {
+          fetchData();
+          setSelectedItems([]); // 清空選取項目 
+        })
+        .catch((error) => console.error("Error deleting items:", error));
+    }
+  };
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <div className="bg-white p-4 rounded-md shadow-md mb-4">
@@ -188,6 +242,23 @@ function SystemManagementBidding() {
         </div>
       </div>
 
+      <div className="flex justify-between mb-4">
+        <div>
+          <button
+            className="p-2 bg-green-500 text-white rounded shadow mr-2"
+            onClick={() => openModal(null)}
+          >
+            新增
+          </button>
+          <button
+            className="p-2 bg-red-500 text-white rounded shadow"
+            onClick={handleDelete}
+          >
+            刪除
+          </button>
+        </div>
+      </div>
+
       <PaginationComponent
         currentPage={currentPage}
         totalPages={Math.ceil(filteredData.length / itemsPerPage)}
@@ -195,10 +266,17 @@ function SystemManagementBidding() {
         totalItems={filteredData.length}
       />
 
-      <div className="bg-white rounded-md shadow-md p-4 overflow-x-auto mt-4">
+<div className="bg-white rounded-md shadow-md p-4 overflow-x-auto mt-4">
         <table className="w-full text-center border-collapse">
           <thead>
             <tr className="bg-gray-200">
+              <th className="p-3 border">
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={toggleSelectAll}
+                />
+              </th>
               <th className="p-3 border">狀態</th>
               <th className="p-3 border">專案代碼</th>
               <th className="p-3 border">案名</th>
@@ -210,6 +288,13 @@ function SystemManagementBidding() {
           <tbody>
             {paginatedData.map((item) => (
               <tr key={item.rcid} className="hover:bg-gray-100">
+                <td className="p-3 border">
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.includes(item.rcid)}
+                    onChange={() => handleSelectItem(item.rcid)}
+                  />
+                </td>
                 <td className="p-3 border">{item.status}</td>
                 <td className="p-3 border">{item.caseCode}</td>
                 <td className="p-3 border">{item.caseName}</td>
@@ -217,14 +302,9 @@ function SystemManagementBidding() {
                 <td className="p-3 border">{item.contractPeriod}</td>
                 <td className="p-3 border">
                   <button
-                    className="p-2 bg-blue-500 text-white rounded shadow flex"
+                    className="p-2 bg-blue-500 text-white rounded shadow"
                     onClick={() => openModal(item)}
                   >
-                    <img
-                      src="/Images/icon_revise_b.png"
-                      alt="revise"
-                      className="h-5 w-5 mr-1"
-                    />
                     編輯
                   </button>
                 </td>

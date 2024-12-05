@@ -50,6 +50,28 @@ def write_roadcase():
     except SQLAlchemyError as sae:
         db.session.rollback()
         return jsonify({"error": f"資料庫錯誤: {str(sae)}"}), 500
+    
+@roadcase_bp.route('/delete', methods=['POST'])
+def delete_roadcase():
+    data = request.json  # 接收 JSON 資料
+    if not data or not isinstance(data.get('rcid'), list):  # 確保 rcid 是列表
+        return jsonify({"error": "請提供有效的 rcid 列表"}), 400
+
+    rcid_list = data['rcid']
+
+    try:
+        # 刪除對應的 rcid 資料
+        deleted_count = db.session.query(RoadCase).filter(RoadCase.rcid.in_(rcid_list)).delete(synchronize_session='fetch')
+
+        if deleted_count == 0:
+            return jsonify({"error": "未找到符合條件的資料，無法刪除"}), 404
+
+        db.session.commit()
+        return jsonify({"message": f"成功刪除 {deleted_count} 筆資料"}), 200
+
+    except SQLAlchemyError as sae:
+        db.session.rollback()
+        return jsonify({"error": f"資料庫錯誤: {str(sae)}"}), 500
 
 def unformat_roadcase_data(formatted_data):
     """
