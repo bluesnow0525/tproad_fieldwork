@@ -20,7 +20,9 @@ function Sidebar() {
               alt="Home"
               className="w-5 h-5 mr-2"
             />
-            <Link to="/home">首頁</Link>
+            <Link to="/home" className="hover:font-bold hover:underline">
+              首頁
+            </Link>
           </li>
 
           <li className="p-2">
@@ -36,13 +38,25 @@ function Sidebar() {
               案件管理
             </button>
             <ul
-              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${openMenus.caseManagement ? "max-h-40" : "max-h-0"}`}
+              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${
+                openMenus.caseManagement ? "max-h-40" : "max-h-0"
+              }`}
             >
               <li className="p-2 flex items-center">
-                <Link to="/case/management">案件管理</Link>
+                <Link
+                  to="/case/management"
+                  className="hover:font-bold hover:underline"
+                >
+                  案件管理
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/case/report">報表作業</Link>
+                <Link
+                  to="/case/report"
+                  className="hover:font-bold hover:underline"
+                >
+                  報表作業
+                </Link>
               </li>
             </ul>
           </li>
@@ -60,13 +74,25 @@ function Sidebar() {
               申請單
             </button>
             <ul
-              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${openMenus.application ? "max-h-40" : "max-h-0"}`}
+              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${
+                openMenus.application ? "max-h-40" : "max-h-0"
+              }`}
             >
               <li className="p-2 flex items-center">
-                <Link to="/application/case-management">案件管理</Link>
+                <Link
+                  to="/application/case-management"
+                  className="hover:font-bold hover:underline"
+                >
+                  案件管理
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/application/roster-management">清冊管理</Link>
+                <Link
+                  to="/application/roster-management"
+                  className="hover:font-bold hover:underline"
+                >
+                  清冊管理
+                </Link>
               </li>
             </ul>
           </li>
@@ -84,16 +110,33 @@ function Sidebar() {
               施工
             </button>
             <ul
-              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${openMenus.construction ? "max-h-40" : "max-h-0"}`}
+              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${
+                openMenus.construction ? "max-h-40" : "max-h-0"
+              }`}
             >
               <li className="p-2 flex items-center">
-                <Link to="/construction/case-management">案件管理</Link>
+                <Link
+                  to="/construction/case-management"
+                  className="hover:font-bold hover:underline"
+                >
+                  案件管理
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/construction/self-inspection">自主檢查表</Link>
+                <Link
+                  to="/construction/self-inspection"
+                  className="hover:font-bold hover:underline"
+                >
+                  自主檢查表
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/construction/roster-production">清冊製作與管理</Link>
+                <Link
+                  to="/construction/roster-production"
+                  className="hover:font-bold hover:underline"
+                >
+                  清冊製作與管理
+                </Link>
               </li>
             </ul>
           </li>
@@ -104,7 +147,9 @@ function Sidebar() {
               alt="Payment"
               className="w-5 h-5 mr-2"
             />
-            <Link to="/payment">請款</Link>
+            <Link to="/payment" className="hover:font-bold hover:underline">
+              請款
+            </Link>
           </li>
 
           <li className="p-2">
@@ -120,19 +165,41 @@ function Sidebar() {
               圖台
             </button>
             <ul
-              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${openMenus.map ? "max-h-60" : "max-h-0"}`}
+              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${
+                openMenus.map ? "max-h-60" : "max-h-0"
+              }`}
             >
               <li className="p-2 flex items-center">
-                <Link to="/map/real-time-vehicle">即時車輛軌跡與影像</Link>
+                <Link
+                  to="/map/real-time-vehicle"
+                  className="hover:font-bold hover:underline"
+                >
+                  即時車輛軌跡與影像
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/map/historical-track">歷史軌跡查詢與下載</Link>
+                <Link
+                  to="/map/historical-track"
+                  className="hover:font-bold hover:underline"
+                >
+                  歷史軌跡查詢與下載
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/map/case-display">案件查詢後呈現</Link>
+                <Link
+                  to="/map/case-display"
+                  className="hover:font-bold hover:underline"
+                >
+                  案件查詢後呈現
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/map/fleet-coverage">車隊巡查覆蓋率</Link>
+                <Link
+                  to="/map/fleet-coverage"
+                  className="hover:font-bold hover:underline"
+                >
+                  車隊巡查覆蓋率
+                </Link>
               </li>
             </ul>
           </li>
@@ -150,16 +217,33 @@ function Sidebar() {
               道路履歷
             </button>
             <ul
-              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${openMenus.roadHistory ? "max-h-40" : "max-h-0"}`}
+              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${
+                openMenus.roadHistory ? "max-h-40" : "max-h-0"
+              }`}
             >
               <li className="p-2 flex items-center">
-                <Link to="/road-history/aar">AAR道路區塊</Link>
+                <Link
+                  to="/road-history/aar"
+                  className="hover:font-bold hover:underline"
+                >
+                  AAR道路區塊
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/road-history/pc">PC道路區塊</Link>
+                <Link
+                  to="/road-history/pc"
+                  className="hover:font-bold hover:underline"
+                >
+                  PC道路區塊
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/road-history/epc">EPC道路區塊</Link>
+                <Link
+                  to="/road-history/epc"
+                  className="hover:font-bold hover:underline"
+                >
+                  EPC道路區塊
+                </Link>
               </li>
             </ul>
           </li>
@@ -177,13 +261,25 @@ function Sidebar() {
               查詢統計
             </button>
             <ul
-              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${openMenus.statistics ? "max-h-40" : "max-h-0"}`}
+              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${
+                openMenus.statistics ? "max-h-40" : "max-h-0"
+              }`}
             >
               <li className="p-2 flex items-center">
-                <Link to="/statistics/monthly">月度統計</Link>
+                <Link
+                  to="/statistics/monthly"
+                  className="hover:font-bold hover:underline"
+                >
+                  月度統計
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/statistics/yearly">年度統計</Link>
+                <Link
+                  to="/statistics/yearly"
+                  className="hover:font-bold hover:underline"
+                >
+                  年度統計
+                </Link>
               </li>
             </ul>
           </li>
@@ -201,27 +297,57 @@ function Sidebar() {
               系統管理
             </button>
             <ul
-              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${openMenus.systemManagement ? "max-h-80" : "max-h-0"}`}
+              className={`ml-4 mt-2 overflow-hidden linear transition-all duration-500 ${
+                openMenus.systemManagement ? "max-h-80" : "max-h-0"
+              }`}
             >
               <li className="p-2 flex items-center">
-                <Link to="/system-management/bidding">標案管理</Link>
+                <Link
+                  to="/system-management/bidding"
+                  className="hover:font-bold hover:underline"
+                >
+                  標案管理
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/system-management/fleet">公司車隊管理</Link>
+                <Link
+                  to="/system-management/fleet"
+                  className="hover:font-bold hover:underline"
+                >
+                  公司車隊管理
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/system-management//work-account">工務帳號管理</Link>
+                <Link
+                  to="/system-management//work-account"
+                  className="hover:font-bold hover:underline"
+                >
+                  工務帳號管理
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/system-management/shared-code">共用代碼管理</Link>
+                <Link
+                  to="/system-management/shared-code"
+                  className="hover:font-bold hover:underline"
+                >
+                  共用代碼管理
+                </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/system-management/menu-permission">
+                <Link
+                  to="/system-management/menu-permission"
+                  className="hover:font-bold hover:underline"
+                >
                   選單權限管理
                 </Link>
               </li>
               <li className="p-2 flex items-center">
-                <Link to="/system-management/change-log">系統異動紀錄</Link>
+                <Link
+                  to="/system-management/change-log"
+                  className="hover:font-bold hover:underline"
+                >
+                  系統異動紀錄
+                </Link>
               </li>
             </ul>
           </li>

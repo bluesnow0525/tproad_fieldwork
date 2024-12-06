@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { url } from "../assets/url";
 
-function EditModal({ isOpen, onClose, onConfirm, defaultValues }) {
+function EditModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  defaultValues,
+  fieldMapping,
+}) {
   const [formData, setFormData] = useState({});
 
   useEffect(() => {
@@ -18,7 +25,14 @@ function EditModal({ isOpen, onClose, onConfirm, defaultValues }) {
   };
 
   const handleConfirm = () => {
-    onConfirm(formData); // 傳回更新後的數據
+    const reversedData = Object.keys(formData).reduce((acc, key) => {
+      const originalKey = Object.keys(fieldMapping).find(
+        (k) => fieldMapping[k] === key
+      );
+      acc[originalKey || key] = formData[key];
+      return acc;
+    }, {});
+    onConfirm(reversedData); // 傳回翻譯回英文的數據
     onClose(); // 關閉模態框
   };
 
@@ -26,14 +40,18 @@ function EditModal({ isOpen, onClose, onConfirm, defaultValues }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-md p-6 w-[800px] max-h-[90vh] overflow-auto">
+      <div className="bg-gray-100 rounded-md p-6 w-[1200px] max-h-[90vh] overflow-auto">
         <h2 className="text-lg font-semibold mb-4">編輯資訊</h2>
+        {/* Text Fields */}
         <div className="grid grid-cols-3 gap-4">
           {Object.keys(formData).map(
             (key) =>
-              key !== "thumbnail" && ( // 忽略不需要編輯的欄位
+              key !== "施工前遠景照片" &&
+              key !== "施工後遠景照片" && (
                 <div key={key}>
-                  <label className="block text-sm font-medium mb-1">{key}</label>
+                  <label className="block text-sm font-medium mb-1">
+                    {key}
+                  </label>
                   <input
                     type="text"
                     name={key}
@@ -45,6 +63,27 @@ function EditModal({ isOpen, onClose, onConfirm, defaultValues }) {
               )
           )}
         </div>
+
+        {/* Images Section */}
+        <div className="mt-6 flex">
+          {["施工前遠景照片", "施工後遠景照片"].map(
+            (key) =>
+              formData[key] && (
+                <div key={key} className="mb-4">
+                  <label className="block text-sm font-medium mb-1 mx-5">
+                    {key}
+                  </label>
+                  <img
+                    src={`${url}/files/img/${formData[key]}`}
+                    alt="縮圖"
+                    className="w-64 h-32 object-contain border mx-5"
+                  />
+                </div>
+              )
+          )}
+        </div>
+
+        {/* Action Buttons */}
         <div className="flex justify-end space-x-4 mt-6">
           <button
             onClick={onClose}

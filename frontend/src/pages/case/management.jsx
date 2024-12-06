@@ -6,7 +6,12 @@ import { saveAs } from "file-saver";
 import { url } from "../../assets/url";
 
 function CaseManagement() {
-  const today = new Date().toISOString().split("T")[0]; // 取得今天的日期 (格式: YYYY-MM-DD)
+  const today = new Date().toISOString().split("T")[0]; // 取得今天的日期 (YYYY-MM-DD)
+
+  // 計算一個月前的日期
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  const minDate = oneMonthAgo.toISOString().split("T")[0];
 
   // const [data, setData] = useState([]);
   const [sortConfig, setSortConfig] = useState({
@@ -25,7 +30,7 @@ function CaseManagement() {
     notification: false,
     inspectionNumber: "",
     district: "",
-    reportDateFrom: today,
+    reportDateFrom: minDate,
     reportDateTo: today,
     source: "",
     vehicleNumber: "",
@@ -150,12 +155,57 @@ function CaseManagement() {
   };
 
   const handleFilterChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-    console.log(filters);
+    const { name, value } = e.target;
+
+    // 計算新的日期範圍
+    if (name === "reportDateFrom") {
+      const fromDate = new Date(value);
+      const toDate = new Date(filters.reportDateTo);
+
+      // 確保 "reportDateTo" 不超過 1 個月
+      const maxAllowedToDate = new Date(fromDate);
+      maxAllowedToDate.setMonth(maxAllowedToDate.getMonth() + 1);
+
+      if (toDate > maxAllowedToDate) {
+        alert("查報日期範圍不能超過一個月！");
+        setFilters({
+          ...filters,
+          [name]: value,
+          reportDateTo: maxAllowedToDate.toISOString().split("T")[0],
+        });
+      } else {
+        setFilters({
+          ...filters,
+          [name]: value,
+        });
+      }
+    } else if (name === "reportDateTo") {
+      const toDate = new Date(value);
+      const fromDate = new Date(filters.reportDateFrom);
+
+      // 確保 "reportDateFrom" 不小於 1 個月
+      const minAllowedFromDate = new Date(toDate);
+      minAllowedFromDate.setMonth(minAllowedFromDate.getMonth() - 1);
+
+      if (fromDate < minAllowedFromDate) {
+        alert("查報日期範圍不能超過一個月！");
+        setFilters({
+          ...filters,
+          [name]: value,
+          reportDateFrom: minAllowedFromDate.toISOString().split("T")[0],
+        });
+      } else {
+        setFilters({
+          ...filters,
+          [name]: value,
+        });
+      }
+    } else {
+      setFilters({
+        ...filters,
+        [name]: value,
+      });
+    }
   };
 
   const applyFilters = () => {
@@ -193,8 +243,40 @@ function CaseManagement() {
     currentPage * itemsPerPage
   );
 
+  const fieldMapping = {
+    caid: "流水號",
+    inspectionNumber: "巡查編號",
+    result: "結案",
+    district: "標案行政區",
+    roadSegment: "巡查路段",
+    damageItem: "損壞項目",
+    damageCondition: "損壞情形",
+    damageLevel: "損壞程度",
+    notification: "觀察案件",
+    postedPersonnel: "登載人員",
+    vehicleNumber: "車號",
+    status: "狀態",
+    reportDate: "查報日期",
+    responsibleFactory: "廠商",
+    uploadToGovernment: "上傳市府", // 新增字段
+    source: "案件來源", // 新增字段
+    lane: "車道方向", // 新增字段
+    longitude: "經度", // 新增字段
+    latitude: "緯度", // 新增字段
+    area: "面積", // 新增字段
+    modifiedBy: "最後修改人", // 新增字段
+    modifiedDate: "最後修改日期", // 新增字段
+    photoBefore: "施工前遠景照片", // 新增字段
+    photoAfter: "施工後遠景照片", // 新增字段
+  };  
+
   const openModal = (item) => {
-    setSelectedItem(item);
+    const translatedItem = Object.keys(item).reduce((acc, key) => {
+      const translatedKey = fieldMapping[key] || key;
+      acc[translatedKey] = item[key];
+      return acc;
+    }, {});
+    setSelectedItem(translatedItem);
     setIsModalOpen(true);
   };
 
@@ -219,6 +301,7 @@ function CaseManagement() {
       })
       .then((result) => {
         console.log("Update successful:", result);
+        alert(result.message);
         // 更新表格數據（根據需求可選擇重新獲取或直接更新狀態）
 
         setFilteredData((prevFilteredData) =>
@@ -231,67 +314,71 @@ function CaseManagement() {
   };
 
   const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(filteredData.map((item) => ({
-      流水號: item.caid,
-      巡查編號: item.inspectionNumber,
-      結案: item.result,
-      結案原因: "", // Add appropriate field if applicable
-      上傳市府: "", // Add appropriate field if applicable
-      案件來源: "", // Add appropriate field if applicable
-      專案代碼: item.responsibleFactory,
-      查報日期: item.reportDate,
-      授權之token: "", // Add appropriate field if applicable
-      觀察案件: item.notification,
-      標案行政區: item.district,
-      巡查路段: item.roadSegment,
-      地址: "", // Add appropriate field if applicable
-      車道方向: item.lane,
-      第幾車道: "", // Add appropriate field if applicable
-      損壞項目: item.damageItem,
-      損壞情形: item.damageCondition,
-      損壞程度: item.damageLevel,
-      損壞說明: "", // Add appropriate field if applicable
-      經度: "", // Add appropriate field if applicable
-      緯度: "", // Add appropriate field if applicable
-      施工前遠景照片: item.thumbnail,
-      施工後遠景照片: "", // Add appropriate field if applicable
-      建立日期: "", // Add appropriate field if applicable
-      登載人員帳號: "", // Add appropriate field if applicable
-      登載人員: item.postedPersonnel,
-      紀錄來源: "", // Add appropriate field if applicable
-      車號: item.vehicleNumber,
-      狀態: item.status,
-      長: "", // Add appropriate field if applicable
-      寬: "", // Add appropriate field if applicable
-      面積: "", // Add appropriate field if applicable
-      門牌遠景: "", // Add appropriate field if applicable
-      查報日期存到時間: "", // Add appropriate field if applicable
-    })));
-  
+    const worksheet = XLSX.utils.json_to_sheet(
+      filteredData.map((item) => ({
+        流水號: item.caid,
+        巡查編號: item.inspectionNumber,
+        結案: item.result,
+        結案原因: "", // 若有其他字段需補充此內容，請提供
+        上傳市府: item.uploadToGovernment, // 已對應後端字段
+        案件來源: item.source, // 已對應後端字段
+        專案代碼: item.responsibleFactory,
+        查報日期: item.reportDate,
+        授權之token: "", // 暫無對應後端字段
+        觀察案件: item.notification,
+        標案行政區: item.district,
+        巡查路段: item.roadSegment,
+        地址: "", // 暫無對應後端字段
+        車道方向: item.lane,
+        第幾車道: "", // 暫無對應後端字段
+        損壞項目: item.damageItem,
+        損壞情形: item.damageCondition,
+        損壞程度: item.damageLevel,
+        損壞說明: "", // 暫無對應後端字段
+        經度: item.longitude || "", // 若無值，則返回空字串
+        緯度: item.latitude || "", // 若無值，則返回空字串
+        建立日期: item.modifiedDate || "", // 已對應後端字段
+        登載人員帳號: "", // 若登載人員帳號需要分開，需補充對應邏輯
+        登載人員: item.postedPersonnel,
+        紀錄來源: "", // 暫無對應後端字段
+        車號: item.vehicleNumber,
+        狀態: item.status,
+        長: item.area.split(" x ")[0] || "", // 從 `area` 字段中提取長度
+        寬: item.area.split(" x ")[1] || "", // 從 `area` 字段中提取寬度
+        面積: item.area || "", // 已對應後端字段
+        門牌遠景: "", // 暫無對應後端字段
+        查報日期存到時間: item.modifiedDate || "", // 已對應後端字段
+        施工前遠景照片: item.photoBefore, // 已對應後端字段
+        施工後遠景照片: item.photoAfter, // 已對應後端字段
+      }))      
+    );
+
     // 自動調整欄位寬度
     const colWidths = Object.keys(worksheet).reduce((acc, key) => {
-      if (key[0] === '!') return acc;
-      const colIndex = key.replace(/[0-9]/g, ''); // 提取列標
+      if (key[0] === "!") return acc;
+      const colIndex = key.replace(/[0-9]/g, ""); // 提取列標
       const value = worksheet[key].v || "";
       acc[colIndex] = Math.max(acc[colIndex] || 10, value.toString().length);
       return acc;
     }, {});
-  
-    worksheet['!cols'] = Object.values(colWidths).map((width) => ({ wch: width + 5 }));
-  
+
+    worksheet["!cols"] = Object.values(colWidths).map((width) => ({
+      wch: width + 5,
+    }));
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "案件管理");
     const excelBuffer = XLSX.write(workbook, {
       bookType: "xlsx",
       type: "array",
     });
-  
+
     const dataBlob = new Blob([excelBuffer], {
       type: "application/octet-stream",
     });
-  
+
     saveAs(dataBlob, "案件管理.xlsx");
-  };  
+  };
 
   const applySorting = (key) => {
     setSortConfig((prevSortConfig) => {
@@ -368,6 +455,7 @@ function CaseManagement() {
               placeholder="查報日期起"
               value={filters.reportDateFrom}
               onChange={handleFilterChange}
+              max={filters.reportDateTo || today} // 動態限制最大值為 "reportDateTo" 或今天
               className="p-2 border rounded"
             />
             <span className="text-xl font-bold">~</span>
@@ -377,6 +465,7 @@ function CaseManagement() {
               placeholder="查報日期迄"
               value={filters.reportDateTo}
               onChange={handleFilterChange}
+              min={filters.reportDateFrom || minDate} // 動態限制最小值為 "reportDateFrom" 或 minDate
               className="p-2 border rounded"
             />
           </div>
@@ -668,9 +757,9 @@ function CaseManagement() {
                   {item.postedPersonnel || ""}
                 </td>
                 <td className="p-3 border">
-                  {item.thumbnail ? (
+                  {item.photoBefore ? (
                     <img
-                      src={`http://localhost:5000/files/img/${item.thumbnail}`}
+                      src={`${url}/files/img/${item.photoBefore}`}
                       alt="縮圖"
                       className="w-32 h-20"
                     />
@@ -690,6 +779,7 @@ function CaseManagement() {
         onClose={closeModal}
         onConfirm={handleEditConfirm}
         defaultValues={selectedItem || {}} // 預設值為選中的行數據
+        fieldMapping={fieldMapping}
       />
       {loading && (
         <div className="fixed top-0 left-0 w-full h-full bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">

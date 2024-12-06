@@ -121,6 +121,7 @@ function SystemManagementBidding() {
           )
         );
         closeModal();
+        alert("送出成功");
       })
       .catch((error) => console.error("Error updating item:", error));
   };

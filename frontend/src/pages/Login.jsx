@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { url } from "../assets/url"; // Replace with your backend API URL
 
 function Login() {
   const [username, setUsername] = useState("");
@@ -18,15 +19,40 @@ function Login() {
   };
 
   useEffect(() => {
-    generateCaptcha(); // 頁面加載時生成驗證碼
+    generateCaptcha(); // Generate CAPTCHA on page load
   }, []);
 
   const handleLogin = () => {
-    if (username === "JUAHUA" && password === "69553174" && captcha === generatedCaptcha) {
-      navigate("/home");
-    } else {
-      alert("帳號、密碼或驗證碼錯誤");
+    if (captcha !== generatedCaptcha) {
+      alert("驗證碼錯誤");
+      return;
     }
+
+    const loginData = {
+      account: username,
+      password: password,
+    };
+
+    // Send data to backend
+    fetch(`${url}/login/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(loginData),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          navigate("/home");
+        } else {
+          alert("帳號或密碼錯誤");
+        }
+      })
+      .catch((error) => {
+        console.error("Error during login:", error);
+        alert("無法連接到伺服器");
+      });
   };
 
   return (
@@ -85,6 +111,7 @@ function Login() {
                     setUsername("");
                     setPassword("");
                     setCaptcha("");
+                    generateCaptcha(); // Reset CAPTCHA
                   }}
                   className="w-full p-2 mx-1 bg-gray-300 text-black rounded hover:bg-gray-400"
                 >

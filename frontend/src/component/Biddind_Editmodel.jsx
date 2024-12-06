@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 
 function EditModal({ isOpen, onClose, selectedItem, onSave }) {
   const [formData, setFormData] = useState({});
+  const [error, setError] = useState("");
 
-  // 當 `selectedItem` 改變時，更新 `formData`
+  // 當 selectedItem 改變時，更新 formData
   useEffect(() => {
     if (selectedItem) {
       setFormData({ ...selectedItem });
@@ -57,8 +58,36 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
     }
   };
 
+  // 新增驗證機制：確認是否所有欄位都有值
+  const validateForm = () => {
+    const requiredFields = [
+      "caseCode",
+      "caseName",
+      "vendor",
+      "contactPerson",
+      "contractStart",
+      "contractEnd",
+    ];
+
+    for (let field of requiredFields) {
+      if (!formData[field]) {
+        return `欄位 ${field} 不能為空`;
+      }
+    }
+
+    return ""; // 若無錯誤，返回空字串
+  };
+
   const handleSave = () => {
-    onSave(formData); // 儲存時傳回處理好的 `formData`
+    // 進行表單驗證
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError); // 顯示錯誤訊息
+      return;
+    }
+
+    setError(""); // 清除錯誤訊息
+    onSave(formData); // 儲存時傳回處理好的 formData
   };
 
   if (!isOpen) return null;
@@ -69,6 +98,13 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
         <h3 className="text-lg font-semibold mb-4">
           {selectedItem ? "編輯標案" : "新增標案"}
         </h3>
+
+        {error && (
+          <div className="text-red-500 text-sm mb-4">
+            {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <label className="flex flex-col">
             專案代碼

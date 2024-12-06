@@ -89,3 +89,25 @@ class RoadCase(db.Model):
     bmodid = db.Column(db.String(20))
     bmoddate = db.Column(db.DateTime)
     rrpttitle = db.Column(db.String(100))
+    
+class Fleet(db.Model):
+    __tablename__ = 'employee'
+    emid = db.Column(db.Integer, primary_key=True)
+    ifuse = db.Column(db.String(1), nullable=False)  # 是否啟用
+    empid = db.Column(db.String(20), nullable=False)  # 帳號
+    empworkcomp = db.Column(db.String(10), nullable=False)  # 公司
+    empworkdepid = db.Column(db.String(3), nullable=False)  # 部門
+    emppasswd = db.Column(db.String(100), nullable=False)  # 密碼
+    empname = db.Column(db.String(50), nullable=False)  # 員工名稱
+    jobdate = db.Column(db.DateTime, nullable=False)  # 入職日期
+    entel = db.Column(db.String(20))  # 聯絡電話
+    enemail = db.Column(db.String(100))  # 電子郵件
+    msid = db.Column(db.String(10))  # 系統 ID
+    rcno = db.Column(db.String(20))  # 負責案件號碼
+    etype = db.Column(db.String(30))  # 角色類型
+    empcomment = db.Column(db.String(500))  # 備註
+    logincount = db.Column(db.Integer, nullable=False, default=0)  # 登錄次數
+    logindate = db.Column(db.DateTime)  # 上次登錄日期
+    loginip = db.Column(db.String(50))  # 上次登錄 IP
+    bmodid = db.Column(db.String(20))  # 修改人
+    bmoddate = db.Column(db.DateTime)  # 修改時間
