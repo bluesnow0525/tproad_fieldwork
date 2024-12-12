@@ -319,7 +319,7 @@ function Sidebar() {
               </li>
               <li className="p-2 flex items-center">
                 <Link
-                  to="/system-management//work-account"
+                  to="/system-management/work-account"
                   className="hover:font-bold hover:underline"
                 >
                   工務帳號管理

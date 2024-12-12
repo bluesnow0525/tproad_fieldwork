@@ -12,6 +12,8 @@ from database.extensions import db
 
 caseinfor_bp = Blueprint('caseinfor', __name__)
 
+UPLOAD_FOLDER = "D:/tproad/files/img/"
+
 @caseinfor_bp.route('/read', methods=['POST'])
 def get_caseinfor():
     filters = request.json
@@ -86,19 +88,46 @@ def get_caseinfor():
 
 @caseinfor_bp.route('/write', methods=['POST'])
 def write_caseinfor():
-    data = request.json
-    if not data:
-        return jsonify({"error": "Valid JSON data is required"}), 400
-
-    # Wrap single record into list for uniform processing
-    if isinstance(data, dict):
-        data = [data]
-
     try:
+        # Handle both JSON and form data
+        if request.content_type == 'application/json':
+            data = request.json
+            if not data:
+                return jsonify({"error": "Valid JSON data is required"}), 400
+            if isinstance(data, dict):
+                data = [data]
+        else:
+            form_data = request.form
+            data = [form_data.to_dict()]
+
         for record in data:
+            # Get case number for file naming
+            casno = record.get("inspectionNumber")
+            
+            # Handle image files if present
+            if request.files:
+                if 'photoBefore' in request.files:
+                    file = request.files['photoBefore']
+                    if file and file.filename:
+                        # Create filename using case number
+                        ext = os.path.splitext(file.filename)[1]
+                        new_filename = f"{casno}_before{ext}"
+                        file_path = os.path.join(UPLOAD_FOLDER, new_filename)
+                        file.save(file_path)
+                        record['photoBefore'] = new_filename
+
+                if 'photoAfter' in request.files:
+                    file = request.files['photoAfter']
+                    if file and file.filename:
+                        ext = os.path.splitext(file.filename)[1]
+                        new_filename = f"{casno}_after{ext}"
+                        file_path = os.path.join(UPLOAD_FOLDER, new_filename)
+                        file.save(file_path)
+                        record['photoAfter'] = new_filename
+
             unformatted_data = {
                 "caid": record.get("caid"),
-                "casno": record.get("inspectionNumber"),
+                "casno": casno,
                 "caifend": "Y" if record.get("result") == "是" else "N",
                 "isObserve": "Y" if record.get("notification") == "是" else "N",
                 "rcno": {
@@ -123,7 +152,7 @@ def write_caseinfor():
                 "cawidth": record.get("area").split("x")[1].strip() if record.get("area") else None,
                 "cagis_lon": record.get("longitude"),
                 "cagis_lat": record.get("latitude"),
-                "bmodid": "system",  # For example purposes, assume "system" is the modifier
+                "bmodid": "system",
                 "bmoddate": datetime.utcnow(),
             }
 
@@ -144,4 +173,6 @@ def write_caseinfor():
 
     except Exception as e:
         db.session.rollback()
+        if os.path.exists(file_path):
+            os.remove(file_path)  # Clean up uploaded file if database operation fails
         return jsonify({"error": str(e)}), 500

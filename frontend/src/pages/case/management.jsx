@@ -285,32 +285,34 @@ function CaseManagement() {
     setSelectedItem(null);
   };
 
-  const handleEditConfirm = (updatedData) => {
-    console.log("Updated Data:", updatedData);
-    // 發送 POST 請求到後端
-    fetch(`${url}/caseinfor/write`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updatedData),
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error("Failed to update data");
-        return response.json();
-      })
-      .then((result) => {
-        console.log("Update successful:", result);
-        alert(result.message);
-        // 更新表格數據（根據需求可選擇重新獲取或直接更新狀態）
-
-        setFilteredData((prevFilteredData) =>
-          prevFilteredData.map((item) =>
-            item.caid === updatedData.caid ? { ...item, ...updatedData } : item
-          )
-        );
-      })
-      .catch((error) => console.error("Error updating data:", error));
+  const handleEditConfirm = async (formData) => {
+    try {
+      const response = await fetch(`${url}/caseinfor/write`, {
+        method: "POST",
+        body: formData,
+      });
+  
+      if (!response.ok) throw new Error("Failed to update data");
+      const result = await response.json();
+      
+      console.log("Update successful:", result);
+      alert(result.message);
+  
+      // 更新本地數據
+      const updatedData = await fetch(`${url}/caseinfor/read`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(filters),
+      }).then(res => res.json());
+  
+      setFilteredData(updatedData);
+      
+    } catch (error) {
+      console.error("Error updating data:", error);
+      alert("更新失敗，請稍後再試");
+    }
   };
 
   const exportToExcel = () => {

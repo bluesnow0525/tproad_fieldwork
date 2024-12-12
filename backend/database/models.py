@@ -111,3 +111,16 @@ class Fleet(db.Model):
     loginip = db.Column(db.String(50))  # 上次登錄 IP
     bmodid = db.Column(db.String(20))  # 修改人
     bmoddate = db.Column(db.DateTime)  # 修改時間
+    
+class SharedCode(db.Model):
+    __tablename__ = 'Checkcode'  # 資料表名稱
+
+    cid = db.Column(db.Integer, primary_key=True)
+    ifuse = db.Column(db.String(1), nullable=False)
+    corder = db.Column(db.Integer)
+    chkclass = db.Column(db.String(2))
+    chkclasstitle = db.Column(db.String(50))
+    chkcode = db.Column(db.String(5))
+    chkitem = db.Column(db.String(100))
+    bmodid = db.Column(db.String(20))
+    bmoddate = db.Column(db.DateTime)

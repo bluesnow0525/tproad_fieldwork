@@ -7,6 +7,8 @@ from routes.reportdata import reportdata_bp
 from routes.roadcase import roadcase_bp
 from routes.fleetdata import fleetdata_bp
 from routes.files_routes import files_bp  # 匯入檔案相關路由
+from routes.work_account import workaccount_bp
+from routes.sharecode import sharedcode_bp
 from routes.login import login_bp
 
 def create_app():
@@ -25,6 +27,8 @@ def create_app():
     app.register_blueprint(reportdata_bp, url_prefix='/reportdata')
     app.register_blueprint(roadcase_bp, url_prefix='/roadcase')
     app.register_blueprint(fleetdata_bp, url_prefix='/fleet')
+    app.register_blueprint(workaccount_bp, url_prefix='/workaccount')
+    app.register_blueprint(sharedcode_bp, url_prefix='/sharedcode')
     app.register_blueprint(login_bp, url_prefix='/login')
     app.register_blueprint(files_bp, url_prefix='/files')  # 註冊檔案相關路由
 

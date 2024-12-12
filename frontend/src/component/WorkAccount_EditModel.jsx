@@ -1,31 +1,28 @@
 import React, { useState, useEffect } from "react";
 
-function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
+function WorkAccountEditModal({ isOpen, onClose, selectedItem, onSave }) {
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState({});
 
-  const roles = ["公司管理員", "內業人員", "修補人員", "維修人員", "巡查人員"];
+  const accountTypes = ["系統管理員", "公務人員"];
 
   useEffect(() => {
-    const initialData = selectedItem ? {
-      ...selectedItem,
-      createdDate: selectedItem.createdDate
-        ? selectedItem.createdDate.replace(/\//g, "-")
-        : ""
-    } : {
-      status: "啟用",
-      caseCode: "",
-      vendor: "",
-      account: "",
-      name: "",
-      role: [],
-      password: "",
-      phone: "",
-      email: "",
-      notes: "",
-      passwordErrorCount: 0,
-      createdDate: new Date().toISOString().split("T")[0],
-    };
+    const initialData = selectedItem
+      ? {
+          ...selectedItem,
+          createdDate: selectedItem.createdDate
+            ? selectedItem.createdDate.replace(/\//g, "-")
+            : "",
+        }
+      : {
+          status: "啟用",
+          vendor: "",
+          account: "",
+          name: "",
+          msid: "",
+          password: "",
+          createdDate: new Date().toISOString().split("T")[0],
+        };
 
     setFormData(initialData);
     setOriginalData(initialData);
@@ -39,22 +36,13 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
     }));
   };
 
-  const handleRoleChange = (role) => {
-    setFormData((prev) => {
-      const updatedRoles = prev.role.includes(role)
-        ? prev.role.filter((r) => r !== role)
-        : [...prev.role, role];
-      return { ...prev, role: updatedRoles };
-    });
-  };
-
   const handleReset = () => {
     setFormData({ ...originalData });
   };
 
   const handleSave = () => {
-    if (!formData.caseCode || !formData.vendor || !formData.account || !formData.name || formData.role.length === 0) {
-      alert("請填寫所有必填欄位，並選擇至少一個角色！");
+    if (!formData.vendor || !formData.account || !formData.name || !formData.msid) {
+      alert("請填寫所有必填欄位！");
       return;
     }
 
@@ -72,9 +60,9 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl p-8 w-[600px]">
         <h3 className="text-xl font-semibold mb-6 text-gray-800">
-          {selectedItem ? "編輯車隊" : "新增車隊"}
+          {selectedItem ? "編輯工務帳號" : "新增工務帳號"}
         </h3>
-        
+
         <div className="grid grid-cols-2 gap-6">
           <label className="flex flex-col">
             <span className="text-gray-700 mb-1">狀態</span>
@@ -88,20 +76,9 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
               <option value="停用">停用</option>
             </select>
           </label>
-          
-          <label className="flex flex-col">
-            <span className="text-gray-700 mb-1">專案代碼</span>
-            <input
-              type="text"
-              name="caseCode"
-              value={formData.caseCode || ""}
-              onChange={handleChange}
-              className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
-          </label>
 
           <label className="flex flex-col">
-            <span className="text-gray-700 mb-1">負責廠商</span>
+            <span className="text-gray-700 mb-1">所屬單位</span>
             <input
               type="text"
               name="vendor"
@@ -133,21 +110,21 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
             />
           </label>
 
-          <label className="flex flex-col col-span-2">
-            <span className="text-gray-700 mb-1">角色</span>
-            <div className="grid grid-cols-3 gap-3 p-2 border rounded-md">
-              {roles.map((role) => (
-                <label key={role} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.role?.includes(role) || false}
-                    onChange={() => handleRoleChange(role)}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-gray-700">{role}</span>
-                </label>
+          <label className="flex flex-col">
+            <span className="text-gray-700 mb-1">帳號類別</span>
+            <select
+              name="msid"
+              value={formData.msid || ""}
+              onChange={handleChange}
+              className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+            >
+              <option value="">請選擇</option>
+              {accountTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
               ))}
-            </div>
+            </select>
           </label>
 
           <label className="flex flex-col">
@@ -158,50 +135,6 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
               value={formData.password || ""}
               onChange={handleChange}
               className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
-          </label>
-
-          <label className="flex flex-col">
-            <span className="text-gray-700 mb-1">電話</span>
-            <input
-              type="text"
-              name="phone"
-              value={formData.phone || ""}
-              onChange={handleChange}
-              className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
-          </label>
-
-          <label className="flex flex-col">
-            <span className="text-gray-700 mb-1">電子郵件</span>
-            <input
-              type="email"
-              name="email"
-              value={formData.email || ""}
-              onChange={handleChange}
-              className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
-          </label>
-
-          <label className="flex flex-col">
-            <span className="text-gray-700 mb-1">備註</span>
-            <textarea
-              name="notes"
-              value={formData.notes || ""}
-              onChange={handleChange}
-              className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
-          </label>
-
-          <label className="flex flex-col">
-            <span className="text-gray-700 mb-1">密碼錯誤次數</span>
-            <input
-              type="number"
-              name="passwordErrorCount"
-              value={formData.passwordErrorCount || 0}
-              onChange={handleChange}
-              className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-              min="0"
             />
           </label>
 
@@ -242,4 +175,4 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
   );
 }
 
-export default FleetEditModal;
+export default WorkAccountEditModal;
