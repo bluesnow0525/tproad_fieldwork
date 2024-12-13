@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { url } from "../assets/url"; // Replace with your backend API URL
+import { useAuth } from "../contexts/AuthContext";
 
 function Login() {
   const [username, setUsername] = useState("");
@@ -8,6 +9,7 @@ function Login() {
   const [captcha, setCaptcha] = useState("");
   const [generatedCaptcha, setGeneratedCaptcha] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const generateCaptcha = () => {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -33,7 +35,6 @@ function Login() {
       password: password,
     };
 
-    // Send data to backend
     fetch(`${url}/login/login`, {
       method: "POST",
       headers: {
@@ -44,9 +45,11 @@ function Login() {
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
+          // 使用 context 的 login 函數儲存使用者資訊
+          login(data.user);
           navigate("/home");
         } else {
-          alert("帳號或密碼錯誤");
+          alert(data.message || "帳號或密碼錯誤");
         }
       })
       .catch((error) => {

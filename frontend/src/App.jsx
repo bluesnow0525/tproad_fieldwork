@@ -1,10 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Sidebar from './component/Sidebar';
 import Header from './component/Header';
 import Footer from './component/Footer';
 import Login from './pages/Login';
-
 import Home from './pages/Home';
 import CaseManagement from './pages/case/management';
 import CaseReport from './pages/case/report';
@@ -30,57 +30,169 @@ import SystemManagementSharedCode from './pages/system-management/shared-code';
 import SystemManagementMenuPermission from './pages/system-management/menu-permission';
 import SystemManagementChangeLog from './pages/system-management/change-log';
 
+function PrivateRoute({ children }) {
+  const { user } = useAuth();
+  
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <Layout>{children}</Layout>;
+}
+
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/home" element={<Layout><Home /></Layout>} />
-        
-        {/* 案件管理 */}
-        <Route path="/case/management" element={<Layout><CaseManagement /></Layout>} />
-        <Route path="/case/report" element={<Layout><CaseReport /></Layout>} />
-        
-        {/* 申請單 */}
-        <Route path="/application/case-management" element={<Layout><ApplicationCaseManagement /></Layout>} />
-        <Route path="/application/roster-management" element={<Layout><ApplicationRosterManagement /></Layout>} />
-        
-        {/* 施工 */}
-        <Route path="/construction/case-management" element={<Layout><ConstructionCaseManagement /></Layout>} />
-        <Route path="/construction/self-inspection" element={<Layout><ConstructionSelfInspection /></Layout>} />
-        <Route path="/construction/roster-production" element={<Layout><ConstructionRosterProduction /></Layout>} />
-        
-        {/* 請款 */}
-        <Route path="/payment" element={<Layout><Payment /></Layout>} />
-        
-        {/* 圖台 */}
-        <Route path="/map/real-time-vehicle" element={<Layout><RealTimeVehicle /></Layout>} />
-        <Route path="/map/historical-track" element={<Layout><HistoricalTrack /></Layout>} />
-        <Route path="/map/case-display" element={<Layout><CaseDisplay /></Layout>} />
-        <Route path="/map/fleet-coverage" element={<Layout><FleetCoverage /></Layout>} />
-        
-        {/* 道路履歷 */}
-        <Route path="/road-history/aar" element={<Layout><RoadHistoryAAR /></Layout>} />
-        <Route path="/road-history/pc" element={<Layout><RoadHistoryPC /></Layout>} />
-        <Route path="/road-history/epc" element={<Layout><RoadHistoryEPC /></Layout>} />
-        
-        {/* 查詢統計 */}
-        <Route path="/statistics/monthly" element={<Layout><MonthlyStatistics /></Layout>} />
-        <Route path="/statistics/yearly" element={<Layout><YearlyStatistics /></Layout>} />
-        
-        {/* 系統管理 */}
-        <Route path="/system-management/bidding" element={<Layout><SystemManagementBidding /></Layout>} />
-        <Route path="/system-management/fleet" element={<Layout><SystemManagementFleet /></Layout>} />
-        <Route path="/system-management/work-account" element={<Layout><SystemManagementWorkAccount /></Layout>} />
-        <Route path="/system-management/shared-code" element={<Layout><SystemManagementSharedCode /></Layout>} />
-        <Route path="/system-management/menu-permission" element={<Layout><SystemManagementMenuPermission /></Layout>} />
-        <Route path="/system-management/change-log" element={<Layout><SystemManagementChangeLog /></Layout>} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          
+          {/* 使用 PrivateRoute 保護所有需要登入的路由 */}
+          <Route path="/home" element={
+            <PrivateRoute>
+              <Home />
+            </PrivateRoute>
+          } />
+          
+          {/* 案件管理 */}
+          <Route path="/case/management" element={
+            <PrivateRoute>
+              <CaseManagement />
+            </PrivateRoute>
+          } />
+          <Route path="/case/report" element={
+            <PrivateRoute>
+              <CaseReport />
+            </PrivateRoute>
+          } />
+          
+          {/* 申請單 */}
+          <Route path="/application/case-management" element={
+            <PrivateRoute>
+              <ApplicationCaseManagement />
+            </PrivateRoute>
+          } />
+          <Route path="/application/roster-management" element={
+            <PrivateRoute>
+              <ApplicationRosterManagement />
+            </PrivateRoute>
+          } />
+          
+          {/* 施工 */}
+          <Route path="/construction/case-management" element={
+            <PrivateRoute>
+              <ConstructionCaseManagement />
+            </PrivateRoute>
+          } />
+          <Route path="/construction/self-inspection" element={
+            <PrivateRoute>
+              <ConstructionSelfInspection />
+            </PrivateRoute>
+          } />
+          <Route path="/construction/roster-production" element={
+            <PrivateRoute>
+              <ConstructionRosterProduction />
+            </PrivateRoute>
+          } />
+          
+          {/* 請款 */}
+          <Route path="/payment" element={
+            <PrivateRoute>
+              <Payment />
+            </PrivateRoute>
+          } />
+          
+          {/* 圖台 */}
+          <Route path="/map/real-time-vehicle" element={
+            <PrivateRoute>
+              <RealTimeVehicle />
+            </PrivateRoute>
+          } />
+          <Route path="/map/historical-track" element={
+            <PrivateRoute>
+              <HistoricalTrack />
+            </PrivateRoute>
+          } />
+          <Route path="/map/case-display" element={
+            <PrivateRoute>
+              <CaseDisplay />
+            </PrivateRoute>
+          } />
+          <Route path="/map/fleet-coverage" element={
+            <PrivateRoute>
+              <FleetCoverage />
+            </PrivateRoute>
+          } />
+          
+          {/* 道路履歷 */}
+          <Route path="/road-history/aar" element={
+            <PrivateRoute>
+              <RoadHistoryAAR />
+            </PrivateRoute>
+          } />
+          <Route path="/road-history/pc" element={
+            <PrivateRoute>
+              <RoadHistoryPC />
+            </PrivateRoute>
+          } />
+          <Route path="/road-history/epc" element={
+            <PrivateRoute>
+              <RoadHistoryEPC />
+            </PrivateRoute>
+          } />
+          
+          {/* 查詢統計 */}
+          <Route path="/statistics/monthly" element={
+            <PrivateRoute>
+              <MonthlyStatistics />
+            </PrivateRoute>
+          } />
+          <Route path="/statistics/yearly" element={
+            <PrivateRoute>
+              <YearlyStatistics />
+            </PrivateRoute>
+          } />
+          
+          {/* 系統管理 */}
+          <Route path="/system-management/bidding" element={
+            <PrivateRoute>
+              <SystemManagementBidding />
+            </PrivateRoute>
+          } />
+          <Route path="/system-management/fleet" element={
+            <PrivateRoute>
+              <SystemManagementFleet />
+            </PrivateRoute>
+          } />
+          <Route path="/system-management/work-account" element={
+            <PrivateRoute>
+              <SystemManagementWorkAccount />
+            </PrivateRoute>
+          } />
+          <Route path="/system-management/shared-code" element={
+            <PrivateRoute>
+              <SystemManagementSharedCode />
+            </PrivateRoute>
+          } />
+          <Route path="/system-management/menu-permission" element={
+            <PrivateRoute>
+              <SystemManagementMenuPermission />
+            </PrivateRoute>
+          } />
+          <Route path="/system-management/change-log" element={
+            <PrivateRoute>
+              <SystemManagementChangeLog />
+            </PrivateRoute>
+          } />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 
 function Layout({ children }) {
+  const { user } = useAuth();  // 可以在 Layout 中使用使用者資訊
+  
   return (
     <div className="flex flex-col h-screen">
       <Header />

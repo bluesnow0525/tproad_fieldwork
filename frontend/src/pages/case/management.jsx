@@ -4,10 +4,13 @@ import EditModal from "../../component/Case_Editmodal";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { url } from "../../assets/url";
+import { useAuth } from "../../contexts/AuthContext";
 
 function CaseManagement() {
-  const today = new Date().toISOString().split("T")[0]; // 取得今天的日期 (YYYY-MM-DD)
+  const { user } = useAuth();
+  console.log(user);
 
+  const today = new Date().toISOString().split("T")[0]; // 取得今天的日期 (YYYY-MM-DD)
   // 計算一個月前的日期
   const oneMonthAgo = new Date();
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
@@ -155,8 +158,15 @@ function CaseManagement() {
   };
 
   const handleFilterChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
 
+    if (type === 'checkbox') {
+      setFilters(prev => ({
+        ...prev,
+        [name]: checked
+      }));
+      return;
+    }
     // 計算新的日期範圍
     if (name === "reportDateFrom") {
       const fromDate = new Date(value);
@@ -210,6 +220,7 @@ function CaseManagement() {
 
   const applyFilters = () => {
     const requestData = filters;
+    console.log(requestData)
     setLoading(true);
 
     fetch(`${url}/caseinfor/read`, {
@@ -686,6 +697,7 @@ function CaseManagement() {
                   />
                 </button>
               </th>
+              <th className="p-3 border">車道方向</th>
               <th className="p-3 border">損壞項目</th>
               <th className="p-3 border">損壞程度</th>
               <th className="p-3 border">損壞情形</th>
@@ -742,6 +754,9 @@ function CaseManagement() {
                 <td className="p-3 border border-x-0">{item.district || ""}</td>
                 <td className="p-3 border border-x-0">
                   {item.roadSegment || ""}
+                </td>
+                <td className="p-3 border border-x-0">
+                  {item.lane || ""}
                 </td>
                 <td className="p-3 border border-x-0">
                   {item.damageItem || ""}
