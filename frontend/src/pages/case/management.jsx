@@ -28,12 +28,11 @@ function CaseManagement() {
   const [filters, setFilters] = useState({
     caid: "",
     result: "",
-    lane: "",
     thumbnail: "",
     notification: false,
     inspectionNumber: "",
     district: "",
-    reportDateFrom: minDate,
+    reportDateFrom: today,
     reportDateTo: today,
     source: "",
     vehicleNumber: "",
@@ -44,6 +43,8 @@ function CaseManagement() {
     damageCondition: "",
     status: "",
     responsibleFactory: "",
+    laneDirection: "", // 新增車道方向
+    laneNumber: "", // 新增車道號碼
     // uploadPipe: "",
   });
   const [selectedItems, setSelectedItems] = useState([]); // 存儲被選中的項目 ID
@@ -160,10 +161,10 @@ function CaseManagement() {
   const handleFilterChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    if (type === 'checkbox') {
-      setFilters(prev => ({
+    if (type === "checkbox") {
+      setFilters((prev) => ({
         ...prev,
-        [name]: checked
+        [name]: checked,
       }));
       return;
     }
@@ -220,7 +221,7 @@ function CaseManagement() {
 
   const applyFilters = () => {
     const requestData = filters;
-    console.log(requestData)
+    console.log(requestData);
     setLoading(true);
 
     fetch(`${url}/caseinfor/read`, {
@@ -260,6 +261,7 @@ function CaseManagement() {
     result: "結案",
     district: "標案行政區",
     roadSegment: "巡查路段",
+    caRoad: "路段",
     damageItem: "損壞項目",
     damageCondition: "損壞情形",
     damageLevel: "損壞程度",
@@ -271,15 +273,18 @@ function CaseManagement() {
     responsibleFactory: "廠商",
     uploadToGovernment: "上傳市府", // 新增字段
     source: "案件來源", // 新增字段
-    lane: "車道方向", // 新增字段
+    laneDirection: "車道方向", // 新增
+    laneNumber: "車道號碼", // 新增
     longitude: "經度", // 新增字段
     latitude: "緯度", // 新增字段
     area: "面積", // 新增字段
+    length: "長",
+    width: "寬",
     modifiedBy: "最後修改人", // 新增字段
     modifiedDate: "最後修改日期", // 新增字段
     photoBefore: "施工前遠景照片", // 新增字段
     photoAfter: "施工後遠景照片", // 新增字段
-  };  
+  };
 
   const openModal = (item) => {
     const translatedItem = Object.keys(item).reduce((acc, key) => {
@@ -302,13 +307,13 @@ function CaseManagement() {
         method: "POST",
         body: formData,
       });
-  
+
       if (!response.ok) throw new Error("Failed to update data");
       const result = await response.json();
-      
+
       console.log("Update successful:", result);
       alert(result.message);
-  
+
       // 更新本地數據
       const updatedData = await fetch(`${url}/caseinfor/read`, {
         method: "POST",
@@ -316,10 +321,9 @@ function CaseManagement() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(filters),
-      }).then(res => res.json());
-  
+      }).then((res) => res.json());
+
       setFilteredData(updatedData);
-      
     } catch (error) {
       console.error("Error updating data:", error);
       alert("更新失敗，請稍後再試");
@@ -340,10 +344,10 @@ function CaseManagement() {
         授權之token: "", // 暫無對應後端字段
         觀察案件: item.notification,
         標案行政區: item.district,
-        巡查路段: item.roadSegment,
-        地址: "", // 暫無對應後端字段
-        車道方向: item.lane,
-        第幾車道: "", // 暫無對應後端字段
+        巡查路段: item.caRoad,
+        地址: item.roadSegment, // 暫無對應後端字段
+        車道方向: item.laneDirection,
+        第幾車道: item.laneNumber, // 暫無對應後端字段
         損壞項目: item.damageItem,
         損壞情形: item.damageCondition,
         損壞程度: item.damageLevel,
@@ -356,14 +360,14 @@ function CaseManagement() {
         紀錄來源: "", // 暫無對應後端字段
         車號: item.vehicleNumber,
         狀態: item.status,
-        長: item.area.split(" x ")[0] || "", // 從 `area` 字段中提取長度
-        寬: item.area.split(" x ")[1] || "", // 從 `area` 字段中提取寬度
+        長: item.length || "", // 從 `area` 字段中提取長度
+        寬: item.width || "", // 從 `area` 字段中提取寬度
         面積: item.area || "", // 已對應後端字段
         門牌遠景: "", // 暫無對應後端字段
         查報日期存到時間: item.modifiedDate || "", // 已對應後端字段
         施工前遠景照片: item.photoBefore, // 已對應後端字段
         施工後遠景照片: item.photoAfter, // 已對應後端字段
-      }))      
+      }))
     );
 
     // 自動調整欄位寬度
@@ -482,7 +486,7 @@ function CaseManagement() {
               className="p-2 border rounded"
             />
           </div>
-          {/* <select
+          <select
             name="source"
             value={filters.source}
             onChange={handleFilterChange}
@@ -493,7 +497,7 @@ function CaseManagement() {
             <option value="車巡">車巡</option>
             <option value="系統新增">系統新增</option>
             <option value="機車">機車</option>
-          </select> */}
+          </select>
           <input
             type="text"
             name="vehicleNumber"
@@ -756,7 +760,7 @@ function CaseManagement() {
                   {item.roadSegment || ""}
                 </td>
                 <td className="p-3 border border-x-0">
-                  {item.lane || ""}
+                  {item.laneDirection || ""} {item.laneNumber || ""}
                 </td>
                 <td className="p-3 border border-x-0">
                   {item.damageItem || ""}
@@ -773,13 +777,48 @@ function CaseManagement() {
                 <td className="p-3 border border-x-0">
                   {item.postedPersonnel || ""}
                 </td>
-                <td className="p-3 border">
+                <td className="p-3 border relative">
                   {item.photoBefore ? (
-                    <img
-                      src={`${url}/files/img/${item.photoBefore}`}
-                      alt="縮圖"
-                      className="w-32 h-20"
-                    />
+                    <div className="relative group">
+                      <img
+                        src={`${url}/files/img/${item.photoBefore}`}
+                        alt="縮圖"
+                        className="w-32 h-20 cursor-pointer"
+                      />
+
+                      {/* 懸停時顯示的大圖容器 */}
+                      <div className="hidden group-hover:flex fixed inset-0 z-50 items-center justify-center pointer-events-none">
+                        {/* 圖片容器 */}
+                        <div className="flex gap-8 z-10 bg-white p-6 rounded-xl shadow-2xl max-w-[80vw] pointer-events-auto border border-gray-500">
+                          <div className="space-y-3">
+                            <p className="text-lg font-medium text-gray-800 text-center">
+                              施工前
+                            </p>
+                            <img
+                              src={`${url}/files/img/${item.photoBefore}`}
+                              alt="施工前大圖"
+                              className="w-[500px] h-auto object-contain"
+                            />
+                          </div>
+                          <div className="space-y-3">
+                            <p className="text-lg font-medium text-gray-800 text-center">
+                              施工後
+                            </p>
+                            {item.photoAfter ? (
+                              <img
+                                src={`${url}/files/img/${item.photoAfter}`}
+                                alt="施工後大圖"
+                                className="w-[500px] h-auto object-contain"
+                              />
+                            ) : (
+                              <div className="w-[500px] h-[400px] flex items-center justify-center bg-gray-100 text-gray-400">
+                                無施工後照片
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     <span className="text-gray-400">無縮圖</span>
                   )}

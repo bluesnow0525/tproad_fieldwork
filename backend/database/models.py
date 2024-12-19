@@ -124,3 +124,12 @@ class SharedCode(db.Model):
     chkitem = db.Column(db.String(100))
     bmodid = db.Column(db.String(20))
     bmoddate = db.Column(db.DateTime)
+    
+class RoadClass(db.Model):
+    __tablename__ = 'roadcode'  # 假設資料表名稱為 roadclass
+    rcid = db.Column(db.Integer, primary_key=True)
+    caDistrict = db.Column(db.String(255))
+    rclass = db.Column(db.String(255))
+    rcname = db.Column(db.String(255))
+    rcname1 = db.Column(db.String(255))
+    rcarea = db.Column(db.String(255))

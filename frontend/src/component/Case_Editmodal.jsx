@@ -14,12 +14,32 @@ function EditModal({
     photoBefore: null,
     photoAfter: null,
   });
+  const [roadSegments, setRoadSegments] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // 定義選單選項
+  const filteredRoadSegments = roadSegments.filter((segment) =>
+    segment.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  useEffect(() => {
+    if (formData.標案行政區) {
+      fetch(`${url}/caseinfor/road-segments/${formData.標案行政區}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setRoadSegments(data);
+        })
+        .catch((error) =>
+          console.error("Error fetching road segments:", error)
+        );
+    }
+  }, [formData.標案行政區]);
+
   const selectOptions = {
     狀態: ["待審", "通過"],
     損壞項目: ["AC路面", "人行道及相關設施"],
     損壞程度: ["輕", "中", "重"],
+    車道方向: ["順向", "逆向"],
+    車道號碼: ["1", "2", "3", "4", "5"],
     標案行政區: [
       "中正區",
       "大同區",
@@ -36,7 +56,8 @@ function EditModal({
     ],
     觀察案件: ["是", "否"],
     結案: ["是", "否"],
-    車道方向: ["順向(1)"],
+    案件來源: ["APP通報", "車巡", "系統通報", "機車"],
+    路段: roadSegments,
   };
 
   const isSelectField = (fieldName) => {
@@ -44,15 +65,17 @@ function EditModal({
       "狀態",
       "損壞項目",
       "車道方向",
+      "車道號碼",
       "標案行政區",
       "損壞程度",
       "觀察案件",
       "結案",
+      "案件來源",
+      "路段",
     ].includes(fieldName);
   };
 
-  // 不需要顯示的欄位
-  const hiddenFields = ["最後修改人", "最後修改日期"];
+  const hiddenFields = ["最後修改人", "最後修改日期", "流水號", "上傳市府"];
 
   useEffect(() => {
     if (isOpen && defaultValues) {
@@ -67,10 +90,7 @@ function EditModal({
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
-
-    // 處理日期欄位的格式轉換
     if (name === "查報日期" && type === "date") {
-      // 將 YYYY-MM-DD 轉換為 YYYY/MM/DD
       const formattedDate = value.replace(/-/g, "/");
       setFormData((prevData) => ({
         ...prevData,
@@ -104,19 +124,16 @@ function EditModal({
   const handleConfirm = async () => {
     const formDataToSend = new FormData();
 
-    // 🔵 修改：調整資料處理邏輯
     const reversedData = Object.keys(formData).reduce((acc, key) => {
       const originalKey = Object.keys(fieldMapping).find(
         (k) => fieldMapping[k] === key
       );
       if (originalKey) {
-        // 確保空值被設為空字串而不是 "null"
         acc[originalKey] = formData[key] === null ? "" : formData[key];
       }
       return acc;
     }, {});
 
-    // 🔵 修改：確保 append 時不會傳入 "null"
     Object.keys(reversedData).forEach((key) => {
       const value = reversedData[key];
       formDataToSend.append(key, value === null ? "" : value);
@@ -148,12 +165,34 @@ function EditModal({
       return null;
     }
 
+    if (key === "路段" && roadSegments.length > 0) {
+      const filteredSegments = roadSegments.filter((segment) =>
+        segment.label.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      return (
+        <select
+          name={key}
+          value={formData[key] || ""}
+          onChange={handleInputChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+        >
+          <option value="">請選擇路段</option>
+          {filteredSegments.map((segment) => (
+            <option key={segment.value} value={segment.value}>
+              {segment.label}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
     if (key === "查報日期") {
       return (
         <input
           type="date"
           name={key}
-          value={formData[key]?.replace(/\//g, "-") || ""} // 將 YYYY/MM/DD 轉換為 YYYY-MM-DD
+          value={formData[key]?.replace(/\//g, "-") || ""}
           onChange={handleInputChange}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
         />
@@ -194,68 +233,282 @@ function EditModal({
       <div className="bg-white rounded-xl shadow-2xl p-8 w-[1200px] max-h-[90vh] overflow-auto">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">編輯資訊</h2>
 
-        <div className="grid grid-cols-3 gap-6">
-          {Object.keys(formData).map(
-            (key) =>
-              key !== "施工前遠景照片" &&
-              key !== "施工後遠景照片" &&
-              !hiddenFields.includes(key) && (
-                <div key={key} className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    {key}
-                  </label>
-                  {renderInput(key)}
-                </div>
-              )
-          )}
-        </div>
-
-        {/* Images Section */}
-        <div className="mt-8 grid grid-cols-2 gap-8">
-          {["施工前遠景照片", "施工後遠景照片"].map((key) => (
-            <div key={key} className="space-y-2">
+        <div className="space-y-4">
+          {/* 第一行 */}
+          <div className="grid grid-cols-3 gap-6">
+            <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                {key}
+                巡查編號
               </label>
-              <div className="space-y-4">
-                <div className="h-48 w-full border rounded-lg overflow-hidden bg-gray-50">
-                  {newImages[
-                    key === "施工前遠景照片" ? "photoBefore" : "photoAfter"
-                  ]?.preview ||
-                  (formData[key] && `${url}/files/img/${formData[key]}`) ? (
-                    <img
-                      src={
-                        newImages[
-                          key === "施工前遠景照片"
-                            ? "photoBefore"
-                            : "photoAfter"
-                        ]?.preview || `${url}/files/img/${formData[key]}`
-                      }
-                      alt={key}
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-400">
-                      無圖片
-                    </div>
-                  )}
+              <input
+                type="text"
+                value={formData.巡查編號 || ""}
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                查報日期
+              </label>
+              <input
+                type="text"
+                value={formData.查報日期 || ""}
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                車牌
+              </label>
+              <input
+                type="text"
+                value={formData.車號 || ""}
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+              />
+            </div>
+          </div>
+
+          {/* 第二行 */}
+          <div className="grid grid-cols-4 gap-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                標案行政區
+              </label>
+              {renderInput("標案行政區")}
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                狀態
+              </label>
+              {renderInput("狀態")}
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                案件來源
+              </label>
+              {renderInput("案件來源")}
+            </div>
+          </div>
+
+          {/* 第二行：路段選擇 */}
+          <div className="grid grid-cols-1 gap-6">
+            <div className="flex space-x-4">
+              <div className="w-1/6 space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  搜尋路段
+                </label>
+                <input
+                  type="text"
+                  placeholder="搜尋路段..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="w-1/4 space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  路段
+                </label>
+                <select
+                  name="路段"
+                  value={formData.路段 || ""}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                >
+                  <option value="">請選擇路段</option>
+                  {filteredRoadSegments.map((segment) => (
+                    <option key={segment.value} value={segment.value}>
+                      {segment.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  地址
+                </label>
+                {renderInput("巡查路段")}
+              </div>
+            </div>
+          </div>
+
+          {/* 第三行 */}
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                損壞項目
+              </label>
+              {renderInput("損壞項目")}
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                損壞情形
+              </label>
+              {renderInput("損壞情形")}
+            </div>
+          </div>
+
+          {/* 第四行 */}
+          <div className="grid grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                車道方向
+              </label>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    name="車道方向"
+                    value="順向"
+                    checked={formData.車道方向 === "順向"}
+                    onChange={handleInputChange}
+                    className="mr-2"
+                  />
+                  <label>順向</label>
                 </div>
-                <div className="flex justify-start">
-                  <label className="cursor-pointer px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileUpload(e, key)}
-                      className="hidden"
-                    />
-                    {formData[key] ? "更換圖片" : "上傳圖片"}
-                  </label>
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    name="車道方向"
+                    value="逆向"
+                    checked={formData.車道方向 === "逆向"}
+                    onChange={handleInputChange}
+                    className="mr-2"
+                  />
+                  <label>逆向</label>
                 </div>
               </div>
             </div>
-          ))}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                第幾車道
+              </label>
+              {renderInput("車道號碼")}
+            </div>
+          </div>
+
+          {/* 第五行 */}
+          <div className="grid grid-cols-4 gap-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                損壞程度
+              </label>
+              {renderInput("損壞程度")}
+            </div>
+            <div className="col-span-2 space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                尺寸（長 / 寬 / 面積）
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-md"
+                  name="長"
+                  value={formData.長 || ""}
+                  onChange={handleInputChange}
+                  placeholder="長"
+                />
+                <span>/</span>
+                <input
+                  type="text"
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-md"
+                  name="寬"
+                  value={formData.寬 || ""}
+                  onChange={handleInputChange}
+                  placeholder="寬"
+                />
+                <span>/</span>
+                <input
+                  type="text"
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-md"
+                  name="面積"
+                  value={formData.面積 || ""}
+                  onChange={handleInputChange}
+                  placeholder="面積"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 第六行：經緯度 */}
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                經度
+              </label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                value={formData.經度 || ""}
+                onChange={handleInputChange}
+                name="經度"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                緯度
+              </label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                value={formData.緯度 || ""}
+                onChange={handleInputChange}
+                name="緯度"
+              />
+            </div>
+          </div>
+
+          {/* 圖片區塊 */}
+          <div className="grid grid-cols-2 gap-8 mt-4">
+            {["施工前遠景照片", "施工後遠景照片"].map((key) => (
+              <div key={key} className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  {key}
+                </label>
+                <div className="space-y-4">
+                  <div className="h-48 w-full border rounded-lg overflow-hidden bg-gray-50">
+                    {newImages[
+                      key === "施工前遠景照片" ? "photoBefore" : "photoAfter"
+                    ]?.preview ||
+                    (formData[key] && `${url}/files/img/${formData[key]}`) ? (
+                      <img
+                        src={
+                          newImages[
+                            key === "施工前遠景照片"
+                              ? "photoBefore"
+                              : "photoAfter"
+                          ]?.preview || `${url}/files/img/${formData[key]}`
+                        }
+                        alt={key}
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-gray-400">
+                        無圖片
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex justify-start">
+                    <label className="cursor-pointer px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, key)}
+                        className="hidden"
+                      />
+                      {formData[key] ? "更換圖片" : "上傳圖片"}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
+        {/* 按鈕區 */}
         <div className="flex justify-end space-x-4 mt-8">
           <button
             onClick={onClose}

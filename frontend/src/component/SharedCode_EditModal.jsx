@@ -86,6 +86,7 @@ function SharedCodeEditModal({ isOpen, onClose, selectedItem, onSave }) {
               name="categoryCode"
               value={formData.categoryCode || ""}
               onChange={handleChange}
+              readOnly
               className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
           </label>
@@ -108,6 +109,7 @@ function SharedCodeEditModal({ isOpen, onClose, selectedItem, onSave }) {
               name="sharedCode"
               value={formData.sharedCode || ""}
               onChange={handleChange}
+              readOnly
               className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
           </label>

@@ -90,23 +90,13 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
           </label>
           
           <label className="flex flex-col">
-            <span className="text-gray-700 mb-1">專案代碼</span>
+            <span className="text-gray-700 mb-1">負責廠商</span>
             <input
               type="text"
               name="caseCode"
               value={formData.caseCode || ""}
               onChange={handleChange}
-              className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
-          </label>
-
-          <label className="flex flex-col">
-            <span className="text-gray-700 mb-1">負責廠商</span>
-            <input
-              type="text"
-              name="vendor"
-              value={formData.vendor || ""}
-              onChange={handleChange}
+              readOnly
               className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
           </label>
@@ -118,6 +108,7 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
               name="account"
               value={formData.account || ""}
               onChange={handleChange}
+              readOnly
               className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
           </label>
@@ -212,6 +203,7 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
               name="createdDate"
               value={formData.createdDate || ""}
               onChange={handleChange}
+              readOnly
               className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
           </label>
