@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState({});
 
@@ -61,8 +63,8 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
     const formattedData = {
       ...formData,
       createdDate: formData.createdDate.replace(/-/g, "/"),
+      operator: user?.username,
     };
-
     onSave(formattedData);
   };
 

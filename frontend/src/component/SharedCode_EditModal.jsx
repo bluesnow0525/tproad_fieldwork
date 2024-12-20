@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 function SharedCodeEditModal({ isOpen, onClose, selectedItem, onSave }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState({});
 
@@ -42,7 +44,12 @@ function SharedCodeEditModal({ isOpen, onClose, selectedItem, onSave }) {
       return;
     }
 
-    onSave(formData);
+    const formattedData = {
+      ...formData,
+      modifier: user?.username,
+    };
+
+    onSave(formattedData);
   };
 
   if (!isOpen) return null;

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { url } from "../assets/url";
+import { useAuth } from "../contexts/AuthContext";
 
 function EditModal({
   isOpen,
@@ -8,6 +9,7 @@ function EditModal({
   defaultValues,
   fieldMapping,
 }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState({});
   const [newImages, setNewImages] = useState({
@@ -58,6 +60,39 @@ function EditModal({
     結案: ["是", "否"],
     案件來源: ["APP通報", "車巡", "系統通報", "機車"],
     路段: roadSegments,
+    損壞情形:
+      formData.損壞項目 === "AC路面"
+        ? [
+            "坑洞",
+            "縱向及橫向裂縫",
+            "龜裂",
+            "車轍",
+            "隆起與凹陷",
+            "塊狀裂縫",
+            "推擠",
+            "補綻及管線回填",
+            "冒油",
+            "波浪狀鋪面",
+            "車道與路肩分離",
+            "滑溜裂縫",
+            "骨材剝落",
+            "其他",
+            "人手孔缺失",
+            "薄層剝離",
+          ]
+        : [
+            "坑洞",
+            "鋪面破損",
+            "孔蓋周邊破損",
+            "樹穴緣石",
+            "溝蓋路邊緣石",
+            "其他",
+            "鋪面鬆動",
+            "樹木竄根",
+            "私設斜坡道",
+            "側溝蓋破損",
+            "雜草",
+          ],
   };
 
   const isSelectField = (fieldName) => {
@@ -72,6 +107,7 @@ function EditModal({
       "結案",
       "案件來源",
       "路段",
+      "損壞情形",
     ].includes(fieldName);
   };
 
@@ -124,15 +160,20 @@ function EditModal({
   const handleConfirm = async () => {
     const formDataToSend = new FormData();
 
-    const reversedData = Object.keys(formData).reduce((acc, key) => {
-      const originalKey = Object.keys(fieldMapping).find(
-        (k) => fieldMapping[k] === key
-      );
-      if (originalKey) {
-        acc[originalKey] = formData[key] === null ? "" : formData[key];
+    const reversedData = Object.keys(formData).reduce(
+      (acc, key) => {
+        const originalKey = Object.keys(fieldMapping).find(
+          (k) => fieldMapping[k] === key
+        );
+        if (originalKey) {
+          acc[originalKey] = formData[key] === null ? "" : formData[key];
+        }
+        return acc;
+      },
+      {
+        modifiedBy: user,
       }
-      return acc;
-    }, {});
+    );
 
     Object.keys(reversedData).forEach((key) => {
       const value = reversedData[key];
@@ -229,7 +270,15 @@ function EditModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={(e) => {
+        // 如果點擊的是最外層的遮罩，則關閉 Modal
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div className="bg-white rounded-xl shadow-2xl p-8 w-[1200px] max-h-[90vh] overflow-auto">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">編輯資訊</h2>
 
