@@ -55,8 +55,9 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
   };
 
   const handleSave = () => {
-    if (!formData.caseCode || !formData.vendor || !formData.account || !formData.name || formData.role.length === 0) {
+    if (!formData.caseCode || !formData.account || !formData.name || formData.role.length === 0) {
       alert("請填寫所有必填欄位，並選擇至少一個角色！");
+      console.log(formData)
       return;
     }
 
@@ -98,7 +99,7 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
               name="caseCode"
               value={formData.caseCode || ""}
               onChange={handleChange}
-              readOnly
+              
               className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
           </label>
@@ -110,7 +111,7 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
               name="account"
               value={formData.account || ""}
               onChange={handleChange}
-              readOnly
+              
               className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
           </label>

@@ -7,6 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Blueprint, jsonify, request
 from database.db_read import DB_read
 from database.models import ReportData
+from database.models import SystemLog
 from database.extensions import db
 from datetime import datetime
 
@@ -106,6 +107,15 @@ def  write_reportdata(rid, key, file_type, filename):
 
     # 更新欄位
     setattr(record, field_name, filename)
+    
+    new_log = SystemLog(
+        slaccount="system",        # 帳號
+        sname='案件管理 > 報表作業',             # 姓名
+        slevent=f"報表日期：{record.rdate}",         # 事件描述
+        sodate=datetime.now(),      # 操作日期時間
+        sflag='E'                   # 狀態標記
+    )
+    db.session.add(new_log)
 
     # 提交變更
     try:

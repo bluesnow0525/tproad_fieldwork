@@ -9,6 +9,7 @@ from datetime import datetime
 from sqlalchemy import and_
 from database.models import CaseInfor
 from database.models import RoadClass
+from database.models import SystemLog
 from database.extensions import db
 
 caseinfor_bp = Blueprint('caseinfor', __name__)
@@ -51,6 +52,44 @@ def get_caseinfor():
                 "車巡": "2",
                 "系統通報": "3",
                 "機車": "4"
+            },
+            "castatus": {
+                "待審": "0",
+                "通過": "1"
+            },
+            "rcno": {
+                "NRP-111-146-001_寬聯": "NRP-111-146-001",
+                "PR001_盤碩營造": "PR001",
+                "PR002_盤碩營造": "PR002"
+            },
+            "cabad": {
+                "A1": "坑洞",
+                "A2": "縱向及橫向裂縫",
+                "A3": "龜裂",
+                "A4": "車轍",
+                "A5": "隆起與凹陷",
+                "A6": "塊狀裂縫",
+                "A7": "推擠",
+                "A8": "補綻及管線回填",
+                "A9": "冒油",
+                "A10": "波浪狀鋪面",
+                "A11": "車道與路肩分離",
+                "A12": "滑溜裂縫",
+                "A13": "骨材剝落",
+                "A14": "其他",
+                "A15": "人手孔缺失",
+                "A16": "薄層剝離",
+                "B1": "坑洞",
+                "B2": "鋪面破損",
+                "B3": "孔蓋周邊破損",
+                "B4": "樹穴緣石",
+                "B5": "溝蓋路邊緣石",
+                "B6": "其他",
+                "B7": "鋪面鬆動",
+                "B8": "樹木竄根",
+                "B9": "私設斜坡道",
+                "B10": "側溝蓋破損",
+                "B11": "雜草"
             }
         }
 
@@ -82,12 +121,30 @@ def get_caseinfor():
             # 取得資料庫欄位
             db_column = getattr(CaseInfor, db_field)
 
-            # 處理損壞程度和損壞項目的特殊映射
-            if db_field in value_mapping and value in value_mapping[db_field]:
-                mapped_value = value_mapping[db_field][value]
+            # 特殊處理特定欄位
+            if front_field == "damageItem":
+                mapped_value = "B" if value == "人行道及相關設施" else "A"
                 conditions.append(db_column == mapped_value)
+            elif front_field == "status":
+                mapped_value = "0" if value == "待審" else "1"
+                conditions.append(db_column == mapped_value)
+            elif front_field == "responsibleFactory":
+                # 從完整名稱中提取代碼部分
+                factory_code = value.split('_')[0] if '_' in value else value
+                conditions.append(db_column == factory_code)
+            # 處理其他一般映射
+            elif db_field in value_mapping:
+                mapped_value = value_mapping[db_field].get(value)
+                if mapped_value is not None:
+                    conditions.append(db_column == mapped_value)
+                # 如果找不到映射，嘗試模糊搜尋
+                elif isinstance(value, str) and value.strip():
+                    conditions.append(db_column.like(f"%{value}%"))
             elif isinstance(value, str) and value.strip():
                 conditions.append(db_column.like(f"%{value}%"))
+
+            # 添加 debug 日誌
+            print(f"處理欄位 {front_field} (DB: {db_field}), 值: {value}, 條件: {conditions[-1] if conditions else None}")
 
         print("查詢條件:", conditions)
 
@@ -113,7 +170,7 @@ def get_caseinfor():
                 "laneDirection": "順向" if row.caroadDirect == "F" else "",
                 "laneNumber": str(row.caroadNum) if row.caroadNum else "",
                 "damageLevel": {"1": "輕", "2": "中", "3": "重"}.get(row.cabaddegree, "未知"),
-                "damageCondition": row.cabad,
+                "damageCondition": value_mapping["cabad"].get(row.cabad, ""),
                 "reportDate": row.cadate.strftime("%Y/%m/%d") if row.cadate else None,
                 "status": "待審" if row.castatus == "0" else "通過",
                 "vehicleNumber": row.carno,
@@ -206,7 +263,33 @@ def write_caseinfor():
                 "caroadDirect": "F" if record.get("laneDirection") == "順向" else None if record.get("laneDirection") == "逆向" else None,
                 "caroadNum": int(record.get("laneNumber")) if record.get("laneNumber") else None,
                 "cabaddegree": {"輕": "1", "中": "2", "重": "3"}.get(record.get("damageLevel")),
-                "cabad": record.get("damageCondition"),
+                "cabad": {
+                    "坑洞": "A1" if record.get("damageItem") == "AC路面" else "B1",
+                    "縱向及橫向裂縫": "A2",
+                    "龜裂": "A3",
+                    "車轍": "A4",
+                    "隆起與凹陷": "A5",
+                    "塊狀裂縫": "A6",
+                    "推擠": "A7",
+                    "補綻及管線回填": "A8",
+                    "冒油": "A9",
+                    "波浪狀鋪面": "A10",
+                    "車道與路肩分離": "A11",
+                    "滑溜裂縫": "A12",
+                    "骨材剝落": "A13",
+                    "其他": "A14" if record.get("damageItem") == "AC路面" else "B6",
+                    "人手孔缺失": "A15",
+                    "薄層剝離": "A16",
+                    "鋪面破損": "B2",
+                    "孔蓋周邊破損": "B3",
+                    "樹穴緣石": "B4",
+                    "溝蓋路邊緣石": "B5",
+                    "鋪面鬆動": "B7",
+                    "樹木竄根": "B8",
+                    "私設斜坡道": "B9",
+                    "側溝蓋破損": "B10",
+                    "雜草": "B11"
+                }.get(record.get("damageCondition"), ""),
                 "cadate": datetime.strptime(record.get("reportDate"), "%Y/%m/%d") if record.get("reportDate") else None,
                 "castatus": "0" if record.get("status") == "待審" else "1",
                 "carno": record.get("vehicleNumber"),
@@ -224,22 +307,30 @@ def write_caseinfor():
                 "cawidth": record.get("width") if record.get("width") else None,
                 "cagis_lon": record.get("longitude"),
                 "cagis_lat": record.get("latitude"),
-                "bmodid": "system",
-                "bmoddate": datetime.utcnow(),
+                "bmodid": record.get("modifiedBy"),
+                "bmoddate": datetime.now(),
             }
 
             # Update or insert data
             caid = unformatted_data.pop("caid", None)
             if caid:
-                record = db.session.query(CaseInfor).filter_by(caid=caid).first()
-                if record:
+                records = db.session.query(CaseInfor).filter_by(caid=caid).first()
+                if records:
                     db.session.query(CaseInfor).filter_by(caid=caid).update(unformatted_data)
+                    new_log = SystemLog(
+                        slaccount=record.get("modifiedBy"),        # 帳號
+                        sname='案件管理 > 案件管理',             # 姓名
+                        slevent=f"巡查編號：{casno}，查報日期：{record.get("reportDate")}",         # 事件描述
+                        sodate=datetime.now(),      # 操作日期時間
+                        sflag='E'                   # 狀態標記
+                    )
+                    db.session.add(new_log)
                 else:
                     return jsonify({"error": f"Record with ID {caid} not found"}), 404
             else:
                 new_record = CaseInfor(**unformatted_data)
                 db.session.add(new_record)
-
+        
         db.session.commit()
         return jsonify({"message": f"{len(data)} records successfully written"}), 200
 

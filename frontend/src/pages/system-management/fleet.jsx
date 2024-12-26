@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import PaginationComponent from "../../component/Pagination";
 import FleetEditModal from "../../component/Fleet_EditModel";
+import { useAuth } from "../../contexts/AuthContext";
 import { url } from "../../assets/url";
 
 function SystemManagementFleet() {
+  const { user } = useAuth();
   const [data, setData] = useState([]); // 原始數據
   const [filteredData, setFilteredData] = useState([]); // 篩選後數據
   const [filters, setFilters] = useState({
@@ -166,7 +168,7 @@ function SystemManagementFleet() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ emid: selectedItems }),
+        body: JSON.stringify({ emid: selectedItems, operator: user?.username }),
       })
         .then((response) => {
           if (!response.ok) {

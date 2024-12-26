@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 function EditModal({ isOpen, onClose, selectedItem, onSave }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState({});
   const [error, setError] = useState("");
@@ -81,7 +83,11 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
       return;
     }
     setError("");
-    onSave(formData);
+    const formattedData = {
+      ...formData,
+      managerAccount: user?.username,
+    };
+    onSave(formattedData);
   };
 
   const handleReset = () => {

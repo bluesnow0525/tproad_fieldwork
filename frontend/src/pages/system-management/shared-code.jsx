@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { url } from "../../assets/url";
 import PaginationComponent from "../../component/Pagination";
 import SharedCodeEditModal from "../../component/SharedCode_EditModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 function SystemManagementSharedCode() {
+  const { user } = useAuth();
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -86,7 +88,7 @@ function SystemManagementSharedCode() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ids: selectedItems }),
+        body: JSON.stringify({ ids: selectedItems, operator: user?.username }),
       });
 
       if (!response.ok) {

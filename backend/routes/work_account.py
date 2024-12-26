@@ -5,8 +5,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from flask import Blueprint, jsonify, request
-from database.db_read import DB_read
 from database.models import Fleet
+from database.models import SystemLog
 from database.extensions import db
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
@@ -26,6 +26,12 @@ def read_workaccount():
             "4": "維修人員",
             "5": "巡查人員"
         }
+        msid_mapping = {
+            "A01": "系統管理員",
+            "A02": "公務人員",
+            "A03": "合約廠商-管理員",
+            "A04": "合約廠商"
+        }
         
         filtered_results = [row for row in results if row.rcno == None or row.rcno == ""]
 
@@ -39,7 +45,7 @@ def read_workaccount():
                 "account": row.empid or "",
                 "name": row.empname or "",
                 "role": [role_mapping.get(role.strip(), "未知角色") for role in row.etype.split(",")] if row.etype else [],
-                "msid": "系統管理員" if row.msid == "A01" else "",
+                "msid":  msid_mapping.get(row.msid, ""),
                 "password": row.emppasswd or "",
                 "phone": row.entel or "",
                 "email": row.enemail or "",
@@ -74,6 +80,13 @@ def write_workaccount():
             "維修人員": "4",
             "巡查人員": "5"
         }
+        msid_mapping = {
+            "A01": "系統管理員",
+            "A02": "公務人員",
+            "A03": "合約廠商-管理員",
+            "A04": "合約廠商"
+        }
+        reverse_msid_mapping = {v: k for k, v in msid_mapping.items()}
         etype = ",".join([role_mapping.get(role, "") for role in data.get("role", []) if role_mapping.get(role)])
 
         # 將格式化資料轉換為資料庫資料格式
@@ -84,6 +97,7 @@ def write_workaccount():
             "empid": data.get("account"),
             "empname": data.get("name"),
             "etype": etype,
+            "msid": reverse_msid_mapping.get(data.get("msid")),
             "jobdate": datetime.strptime(data.get("createdDate"), "%Y/%m/%d") if data.get("createdDate") else None,
             "bmodid": data.get("operator", "system"),  # 使用提供的修改人資訊，默認為 "system"
             "bmoddate": datetime.utcnow(),
@@ -102,11 +116,27 @@ def write_workaccount():
             if record:
                 for key, value in db_data.items():
                     setattr(record, key, value)
+                new_log = SystemLog(
+                    slaccount=data.get("operator"),        # 帳號
+                    sname='系統管理 > 工務帳號管理',             # 姓名
+                    slevent=f"帳號:{data.get("account")}，姓名:{data.get("name")}",         # 事件描述
+                    sodate=datetime.now(),      # 操作日期時間
+                    sflag='E'                   # 狀態標記
+                )
+                db.session.add(new_log)
             else:
                 return jsonify({"error": f"ID {emid} 的記錄不存在，無法更新"}), 404
         else:  # 新增操作
             new_record = Fleet(**db_data)
             db.session.add(new_record)
+            new_log = SystemLog(
+                slaccount=data.get("operator"),        # 帳號
+                sname='系統管理 > 工務帳號管理',             # 姓名
+                slevent=f"帳號:{data.get("account")}，姓名:{data.get("name")}",         # 事件描述
+                sodate=datetime.now(),      # 操作日期時間
+                sflag='A'                   # 狀態標記
+            )
+            db.session.add(new_log)
 
         db.session.commit()
         return jsonify({"message": "資料已成功寫入"}), 200
@@ -135,10 +165,22 @@ def delete_workaccount():
 
         if not records_to_delete:
             return jsonify({"error": "找不到任何匹配的記錄"}), 404
+        
+        deleted_names = [record.empname for record in records_to_delete]
+        delete_message = "、".join(deleted_names)
 
         # 刪除找到的所有記錄
         for record in records_to_delete:
             db.session.delete(record)
+            
+        new_log = SystemLog(
+            slaccount=data.get("operator"),        # 帳號
+            sname='系統管理 > 工務帳號管理',             # 姓名
+            slevent=f"刪除人員：{delete_message}",         # 事件描述
+            sodate=datetime.now(),      # 操作日期時間
+            sflag='D'                   # 狀態標記
+        )
+        db.session.add(new_log)
 
         db.session.commit()
         return jsonify({"message": "資料已成功刪除"}), 200

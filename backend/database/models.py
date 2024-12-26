@@ -133,3 +133,20 @@ class RoadClass(db.Model):
     rcname = db.Column(db.String(255))
     rcname1 = db.Column(db.String(255))
     rcarea = db.Column(db.String(255))
+    
+class MenuPermission(db.Model):
+    __tablename__ = 'privrole'
+    msid = db.Column(db.Integer, primary_key=True)
+    mstitle = db.Column(db.String(50))
+    comid = db.Column(db.String(10))
+    bmodid = db.Column(db.String(20))
+    bmoddate = db.Column(db.DateTime)
+    
+class SystemLog(db.Model):
+    __tablename__ = 'Systemlog'
+    slid = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    slaccount = db.Column(db.String(20))
+    sname = db.Column(db.String(20))
+    slevent = db.Column(db.String(255))
+    sodate = db.Column(db.DateTime)
+    sflag = db.Column(db.String(5))

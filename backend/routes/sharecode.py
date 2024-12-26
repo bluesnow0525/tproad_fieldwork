@@ -6,6 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from flask import Blueprint, jsonify, request
 from database.models import SharedCode
+from database.models import SystemLog
 from database.extensions import db
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
@@ -54,7 +55,7 @@ def write_shared_code():
             "chkcode": data.get("sharedCode"),
             "chkitem": data.get("codeName"),
             "bmodid": data.get("modifier", "system"),
-            "bmoddate": datetime.utcnow()
+            "bmoddate": datetime.now()
         }
 
         # 判斷是新增或更新
@@ -64,11 +65,27 @@ def write_shared_code():
             if record:
                 for key, value in db_data.items():
                     setattr(record, key, value)
+                new_log = SystemLog(
+                    slaccount=data.get("modifier"),        # 帳號
+                    sname='系統管理 > 共用代碼管理',             # 姓名
+                    slevent=f"類別代碼:{data.get("categoryCode")}，共用代碼:{data.get("sharedCode")}",         # 事件描述
+                    sodate=datetime.now(),      # 操作日期時間
+                    sflag='E'                   # 狀態標記
+                )
+                db.session.add(new_log)
             else:
                 return jsonify({"error": f"找不到 ID {cid} 的記錄"}), 404
         else:  # 新增
             new_record = SharedCode(**db_data)
             db.session.add(new_record)
+            new_log = SystemLog(
+                slaccount=data.get("modifier"),        # 帳號
+                sname='系統管理 > 共用代碼管理',             # 姓名
+                slevent=f"類別代碼:{data.get("categoryCode")}，共用代碼:{data.get("sharedCode")}",         # 事件描述
+                sodate=datetime.now(),      # 操作日期時間
+                sflag='A'                   # 狀態標記
+            )
+            db.session.add(new_log)
 
         db.session.commit()
         return jsonify({"message": "資料已成功儲存"}), 200
@@ -94,9 +111,21 @@ def delete_shared_code():
         records = db.session.query(SharedCode).filter(SharedCode.cid.in_(ids_to_delete)).all()
         if not records:
             return jsonify({"error": "找不到要刪除的記錄"}), 404
+        
+        deleted_names = [record.chkitem for record in records]
+        delete_message = "、".join(deleted_names)
 
         for record in records:
             db.session.delete(record)
+            
+        new_log = SystemLog(
+            slaccount=data.get("operator"),        # 帳號
+            sname='系統管理 > 共用代碼管理',             # 姓名
+            slevent=f"刪除代碼：{delete_message}",         # 事件描述
+            sodate=datetime.now(),      # 操作日期時間
+            sflag='D'                   # 狀態標記
+        )
+        db.session.add(new_log)
 
         db.session.commit()
         return jsonify({"message": "資料已成功刪除"}), 200

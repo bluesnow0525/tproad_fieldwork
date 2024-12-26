@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import PaginationComponent from "../../component/Pagination";
 import EditModal from "../../component/Biddind_Editmodel";
+import { useAuth } from "../../contexts/AuthContext";
 import { url } from "../../assets/url";
 
 function SystemManagementBidding() {
+  const { user } = useAuth();
   const [data, setData] = useState([]); // 原始數據
   const [filteredData, setFilteredData] = useState([]); // 篩選後數據
   const [filters, setFilters] = useState({
@@ -161,7 +163,7 @@ function SystemManagementBidding() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ rcid: selectedItems }),
+        body: JSON.stringify({ rcid: selectedItems, operator: user?.username }),
       })
         .then((response) => {
           if (!response.ok) {

@@ -159,22 +159,28 @@ function EditModal({
 
   const handleConfirm = async () => {
     const formDataToSend = new FormData();
+    const operator = user?.username;  // 或其他你想要設定的值
 
-    const reversedData = Object.keys(formData).reduce(
+    // 先將 modifiedBy 排除在外的其他欄位處理
+    const { modifiedBy, ...restFormData } = formData;
+
+    const reversedData = Object.keys(restFormData).reduce(
       (acc, key) => {
         const originalKey = Object.keys(fieldMapping).find(
           (k) => fieldMapping[k] === key
         );
         if (originalKey) {
-          acc[originalKey] = formData[key] === null ? "" : formData[key];
+          acc[originalKey] = restFormData[key] === null ? "" : restFormData[key];
         }
         return acc;
       },
-      {
-        modifiedBy: user,
-      }
+      {}
     );
 
+    // 先設定 modifiedBy
+    formDataToSend.append("modifiedBy", operator);
+
+    // 再設定其他欄位
     Object.keys(reversedData).forEach((key) => {
       const value = reversedData[key];
       formDataToSend.append(key, value === null ? "" : value);
@@ -186,6 +192,11 @@ function EditModal({
     if (newImages.photoAfter?.file) {
       formDataToSend.append("photoAfter", newImages.photoAfter.file);
     }
+
+    console.log("FormData 內容：");
+    formDataToSend.forEach((value, key) => {
+      console.log(`${key}: ${value}`);
+    });
 
     onConfirm(formDataToSend);
     onClose();

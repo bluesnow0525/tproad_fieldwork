@@ -87,7 +87,7 @@ function WorkAccountEditModal({ isOpen, onClose, selectedItem, onSave }) {
               name="vendor"
               value={formData.vendor || ""}
               onChange={handleChange}
-              readOnly
+              
               className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
           </label>
@@ -99,7 +99,7 @@ function WorkAccountEditModal({ isOpen, onClose, selectedItem, onSave }) {
               name="account"
               value={formData.account || ""}
               onChange={handleChange}
-              readOnly
+              
               className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
           </label>

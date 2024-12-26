@@ -7,6 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Blueprint, jsonify, request
 from database.db_read import DB_read
 from database.models import RoadCase
+from database.models import SystemLog
 from database.extensions import db
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
@@ -36,11 +37,27 @@ def write_roadcase():
             if record:
                 for key, value in db_data.items():
                     setattr(record, key, value)
+                new_log = SystemLog(
+                    slaccount=data.get("managerAccount"),        # 帳號
+                    sname='系統管理 > 標案管理',             # 姓名
+                    slevent=f"專案代碼：{data.get("caseCode")}",         # 事件描述
+                    sodate=datetime.now(),      # 操作日期時間
+                    sflag='E'                   # 狀態標記
+                )
+                db.session.add(new_log)
             else:
                 return jsonify({"error": f"ID {rcid} 的記錄不存在，無法更新"}), 404
         else:  # 新增操作
             new_record = RoadCase(**db_data)
             db.session.add(new_record)
+            new_log = SystemLog(
+                slaccount=data.get("managerAccount"),        # 帳號
+                sname='系統管理 > 標案管理',             # 姓名
+                slevent=f"專案代碼：{data.get("caseCode")}",         # 事件描述
+                sodate=datetime.now(),      # 操作日期時間
+                sflag='A'                   # 狀態標記
+            )
+            db.session.add(new_log)
 
         db.session.commit()
         return jsonify({"message": "資料已成功寫入"}), 200
@@ -61,13 +78,34 @@ def delete_roadcase():
 
     try:
         # 刪除對應的 rcid 資料
-        deleted_count = db.session.query(RoadCase).filter(RoadCase.rcid.in_(rcid_list)).delete(synchronize_session='fetch')
+        # deleted_count = db.session.query(RoadCase).filter(RoadCase.rcid.in_(rcid_list)).delete(synchronize_session='fetch')
 
-        if deleted_count == 0:
-            return jsonify({"error": "未找到符合條件的資料，無法刪除"}), 404
+        # if deleted_count == 0:
+        #     return jsonify({"error": "未找到符合條件的資料，無法刪除"}), 404
+        
+        records_to_delete = db.session.query(RoadCase).filter(RoadCase.rcid.in_(rcid_list)).all()
+
+        if not records_to_delete:
+            return jsonify({"error": "找不到任何匹配的記錄"}), 404
+
+        deleted_names = [record.rcname for record in records_to_delete]
+        delete_message = "、".join(deleted_names)
+
+        # 刪除找到的所有記錄
+        for record in records_to_delete:
+            db.session.delete(record)
+            
+        new_log = SystemLog(
+            slaccount="system",        # 帳號
+            sname='系統管理 > 標案管理',             # 姓名
+            slevent=f"刪除標案：{delete_message}",         # 事件描述
+            sodate=datetime.now(),      # 操作日期時間
+            sflag='D'                   # 狀態標記
+        )
+        db.session.add(new_log)
 
         db.session.commit()
-        return jsonify({"message": f"成功刪除 {deleted_count} 筆資料"}), 200
+        return jsonify({"message": "成功刪除"}), 200
 
     except SQLAlchemyError as sae:
         db.session.rollback()
@@ -89,6 +127,7 @@ def unformat_roadcase_data(formatted_data):
         if formatted_data.get("contractEnd") else None,
         "rcotel": formatted_data.get("contactPhone"),
         "bmodid": formatted_data.get("managerAccount"),
+        "bmoddate": datetime.now(),
         "rcnote": formatted_data.get("notes"),
     }
     # 去掉值為 None 或空字串的項目
