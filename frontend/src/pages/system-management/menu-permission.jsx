@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import PaginationComponent from "../../component/Pagination";
 import SystemManagementMenuPermissionEditModal from "../../component/SystemManagementMenuPermission_EditModal";
+import { useAuth } from "../../contexts/AuthContext";
 import { url } from "../../assets/url";
 
 function SystemManagementMenuPermission() {
+  const { user } = useAuth();
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [filters, setFilters] = useState({
@@ -77,7 +79,9 @@ function SystemManagementMenuPermission() {
   };
 
   const handleSave = (updatedItem) => {
-    fetch(`${url}/permission/write`, {
+    const endpoint = !selectedItem ? `${url}/permission/add` : `${url}/permission/write`;
+    
+    fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -93,11 +97,11 @@ function SystemManagementMenuPermission() {
       .then(() => {
         fetchData();
         closeModal();
-        alert("送出成功");
+        alert(selectedItem ? "更新成功" : "新增成功");
       })
       .catch((error) => {
-        console.error("Error updating item:", error);
-        alert("儲存失敗");
+        console.error("Error saving item:", error);
+        alert(selectedItem ? "更新失敗" : "新增失敗");
       });
   };
 
@@ -134,7 +138,7 @@ function SystemManagementMenuPermission() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ emid: selectedItems }),  // 後端期望 emid 參數
+        body: JSON.stringify({ emid: selectedItems, operator: user?.username  }),  // 後端期望 emid 參數
       })
         .then((response) => {
           if (!response.ok) {
@@ -179,6 +183,11 @@ function SystemManagementMenuPermission() {
             className="p-2 bg-blue-500 text-white rounded shadow flex"
             onClick={applyFilters}
           >
+            <img
+              src="/Images/icon-search.png"
+              alt="calendar"
+              className="h-5 w-5 mr-1"
+            />
             查詢
           </button>
         </div>
@@ -245,7 +254,7 @@ function SystemManagementMenuPermission() {
                     className="p-2 bg-blue-500 text-white rounded shadow"
                     onClick={() => openModal(item)}
                   >
-                    編輯
+                    編輯權限
                   </button>
                 </td>
               </tr>

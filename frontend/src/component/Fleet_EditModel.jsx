@@ -7,6 +7,11 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
   const [originalData, setOriginalData] = useState({});
 
   const roles = ["公司管理員", "內業人員", "修補人員", "維修人員", "巡查人員"];
+  const vendorOptions = [
+    { value: "NRP-111-146-001", label: "NRP-111-146-001" },
+    { value: "PR001", label: "PR001" },
+    { value: "PR002", label: "PR002" }
+  ];
 
   useEffect(() => {
     const initialData = selectedItem ? {
@@ -94,14 +99,19 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
           
           <label className="flex flex-col">
             <span className="text-gray-700 mb-1">負責廠商</span>
-            <input
-              type="text"
+            <select
               name="caseCode"
               value={formData.caseCode || ""}
               onChange={handleChange}
-              
               className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
+            >
+              <option value="">請選擇廠商</option>
+              {vendorOptions.map((vendor) => (
+                <option key={vendor.value} value={vendor.value}>
+                  {vendor.label}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label className="flex flex-col">

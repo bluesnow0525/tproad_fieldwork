@@ -32,6 +32,12 @@ def read_workaccount():
             "A03": "合約廠商-管理員",
             "A04": "合約廠商"
         }
+        vendor_mapping = {
+            "001": "臺北市政府",
+            "002": "公所",
+            "003": "養⼯處",
+            "004": "合約公司"
+        }
         
         filtered_results = [row for row in results if row.rcno == None or row.rcno == ""]
 
@@ -41,7 +47,7 @@ def read_workaccount():
                 "emid": row.emid,
                 "status": "啟用" if row.ifuse.lower() == "y" else "停用",
                 "caseCode": row.rcno or "",
-                "vendor": row.empworkcomp or "",
+                "vendor": vendor_mapping.get(row.empworkdepid, ""),
                 "account": row.empid or "",
                 "name": row.empname or "",
                 "role": [role_mapping.get(role.strip(), "未知角色") for role in row.etype.split(",")] if row.etype else [],
@@ -86,14 +92,21 @@ def write_workaccount():
             "A03": "合約廠商-管理員",
             "A04": "合約廠商"
         }
+        vendor_mapping = {
+            "001": "臺北市政府",
+            "002": "公所",
+            "003": "養⼯處",
+            "004": "合約公司"
+        }
         reverse_msid_mapping = {v: k for k, v in msid_mapping.items()}
         etype = ",".join([role_mapping.get(role, "") for role in data.get("role", []) if role_mapping.get(role)])
+        reverse_vendor_mapping = {v: k for k, v in vendor_mapping.items()}
 
         # 將格式化資料轉換為資料庫資料格式
         db_data = {
             "ifuse": "y" if data.get("status") == "啟用" else "n",
             "rcno": data.get("caseCode"),
-            "empworkcomp": data.get("vendor"),
+            "empworkdepid": reverse_vendor_mapping.get(data.get("vendor"), ""),
             "empid": data.get("account"),
             "empname": data.get("name"),
             "etype": etype,

@@ -4,13 +4,14 @@ import { url } from "../../assets/url";
 
 function SystemManagementChangeLog() {
   const [data, setData] = useState([]);
-  const today = new Date().toISOString().split('T')[0];
-  
+  const today = new Date().toISOString().split("T")[0];
+  const [loading, setLoading] = useState(false);
+
   const [filters, setFilters] = useState({
     sflag: "",
     slaccount: "",
     startDate: today,
-    endDate: today
+    endDate: today,
   });
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -18,18 +19,23 @@ function SystemManagementChangeLog() {
 
   // Fetch API 數據，將篩選條件傳送到後端
   const fetchData = () => {
+    setLoading(true); // 開始載入時設置 loading
     fetch(`${url}/systemlog/read`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(filters)
+      body: JSON.stringify(filters),
     })
       .then((response) => response.json())
       .then((jsonData) => {
         setData(jsonData);
+        setLoading(false); // 載入完成時關閉 loading
       })
-      .catch((error) => console.error("Error fetching data:", error));
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        setLoading(false); // 發生錯誤時也要關閉 loading
+      });
   };
 
   useEffect(() => {
@@ -58,8 +64,15 @@ function SystemManagementChangeLog() {
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
+      {loading && (
+        <div className="fixed top-0 left-0 w-full h-full bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="loader border-t-4 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
+        </div>
+      )}
       <div className="bg-white p-4 rounded-md shadow-md mb-4">
-        <h2 className="text-xl font-semibold mb-4">系統管理 &gt; 系統異動紀錄</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          系統管理 &gt; 系統異動紀錄
+        </h2>
         <form onSubmit={handleSubmit} className="flex items-center gap-4 mb-4">
           <select
             name="sflag"
@@ -73,7 +86,7 @@ function SystemManagementChangeLog() {
             <option value="新增">新增</option>
             <option value="刪除">刪除</option>
           </select>
-          
+
           <input
             type="text"
             name="slaccount"
@@ -83,6 +96,11 @@ function SystemManagementChangeLog() {
             className="p-2 border rounded w-48"
           />
 
+          <img
+            src="/Images/show-calendar.gif"
+            alt="calendar"
+            className="h-8 w-8"
+          />
           <input
             type="date"
             name="startDate"
@@ -90,9 +108,9 @@ function SystemManagementChangeLog() {
             onChange={handleFilterChange}
             className="p-2 border rounded w-48"
           />
-          
+
           <span className="mx-2">~</span>
-          
+
           <input
             type="date"
             name="endDate"
@@ -103,8 +121,13 @@ function SystemManagementChangeLog() {
 
           <button
             type="submit"
-            className="p-2 bg-blue-500 text-white rounded shadow"
+            className="p-2 bg-blue-500 text-white rounded shadow flex"
           >
+            <img
+              src="/Images/icon-search.png"
+              alt="calendar"
+              className="h-5 w-5 mr-1"
+            />
             查詢
           </button>
         </form>
@@ -134,7 +157,7 @@ function SystemManagementChangeLog() {
                 <td className="p-3 border">{item.sflag}</td>
                 <td className="p-3 border">{item.slaccount}</td>
                 <td className="p-3 border">{item.sname}</td>
-                <td className="p-3 border">{item.slevent}</td>
+                <td className="p-3 border text-blue-700">{item.slevent}</td>
                 <td className="p-3 border">{item.sodate}</td>
               </tr>
             ))}

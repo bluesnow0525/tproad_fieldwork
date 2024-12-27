@@ -235,6 +235,11 @@ function SystemManagementFleet() {
             className="p-2 bg-blue-500 text-white rounded shadow flex"
             onClick={applyFilters}
           >
+            <img
+              src="/Images/icon-search.png"
+              alt="calendar"
+              className="h-5 w-5 mr-1"
+            />
             查詢
           </button>
         </div>

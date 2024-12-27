@@ -120,7 +120,8 @@ def unformat_roadcase_data(formatted_data):
         "rcstatus": "2" if formatted_data.get("status") == "啟用" else "1",
         "rcno": formatted_data.get("caseCode"),
         "rcname": formatted_data.get("caseName"),
-        "rconame": formatted_data.get("vendor"),
+        "rcomname": formatted_data.get("vendor"),
+        "rconame": formatted_data.get("contactPerson"),
         "rcsdate": datetime.strptime(formatted_data.get("contractStart"), "%Y/%m/%d")
         if formatted_data.get("contractStart") else None,
         "rcedate": datetime.strptime(formatted_data.get("contractEnd"), "%Y/%m/%d")

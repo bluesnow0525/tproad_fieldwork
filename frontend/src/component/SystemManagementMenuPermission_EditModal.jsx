@@ -1,153 +1,207 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
-function SystemManagementMenuPermissionEditModal({ isOpen, onClose, selectedItem, onSave }) {
+const SystemManagementMenuPermissionEditModal = ({
+  isOpen,
+  onClose,
+  selectedItem,
+  onSave,
+}) => {
   const { user } = useAuth();
-  const [formData, setFormData] = useState({});
-  const [originalData, setOriginalData] = useState({});
+  const [formData, setFormData] = useState({
+    msid: "",
+    roleName: "",
+    operator: "system",
+    permissions: {
+      案件管理: {
+        案件管理: false,
+        表格作業: false,
+        報表作業: false,
+      },
+      申請單: {
+        案件管理: false,
+        清冊管理: false,
+      },
+      施工: {
+        案件管理: false,
+        自主檢查表: false,
+        清冊製作與管理: false,
+      },
+      請款: {
+        請款: false,
+      },
+      總台: {
+        即時車輛軌跡與影像: false,
+        歷史軌跡查詢與下載: false,
+        案件查詢後呈現: false,
+        車隊巡查覆蓋率: false,
+      },
+      道路履歷: {
+        AAR道路區塊: false,
+        PC道路區塊: false,
+        EPC道路區塊: false,
+      },
+      查詢統計: {
+        查詢統計: false,
+      },
+      系統管理: {
+        標案管理: false,
+        公司車隊管理: false,
+        工務帳號管理: false,
+        共用代碼管理: false,
+        選單權限管理: false,
+        系統更動紀錄: false,
+      },
+    },
+  });
 
-  const roles = [
-    { key: "A01", value: "系統管理員" },
-    { key: "A02", value: "公務人員" },
-    { key: "A03", value: "合約廠商-管理員" },
-    { key: "A04", value: "合約廠商" }
-  ];
+  const isAddMode = !selectedItem;
 
   useEffect(() => {
-    const initialData = selectedItem ? {
-      ...selectedItem
-    } : {
-      msid: "",
-      roleName: "",
-      operator: user?.username || "",
-    };
-
-    setFormData(initialData);
-    setOriginalData(initialData);
-  }, [selectedItem, user]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "roleName") {
-      const selectedRole = roles.find(role => role.value === value);
-      setFormData(prev => ({
-        ...prev,
-        [name]: value,
-        msid: selectedRole ? selectedRole.key : ""
-      }));
-    } else if (name === "msid") {
-      const selectedRole = roles.find(role => role.key === value);
-      setFormData(prev => ({
-        ...prev,
-        [name]: value,
-        roleName: selectedRole ? selectedRole.value : ""
-      }));
+    if (selectedItem) {
+      setFormData({
+        msid: selectedItem.msid || "",
+        roleName: selectedItem.roleName || "",
+        operator: user?.username,
+        permissions: selectedItem.permissions || formData.permissions,
+      });
+    } else {
+      // Reset form for add mode
+      setFormData({
+        msid: "",
+        roleName: "",
+        operator: user?.username,
+        permissions: formData.permissions,
+      });
     }
+  }, [selectedItem]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleCheckboxChange = (category, item) => {
+    setFormData((prev) => ({
+      ...prev,
+      permissions: {
+        ...prev.permissions,
+        [category]: {
+          ...prev.permissions[category],
+          [item]: !prev.permissions[category][item],
+        },
+      },
+    }));
   };
 
   const handleReset = () => {
-    setFormData({ ...originalData });
+    if (isAddMode) {
+      setFormData({
+        msid: "",
+        roleName: "",
+        operator: "system",
+        permissions: formData.permissions,
+      });
+    } else {
+      setFormData({
+        ...selectedItem,
+        permissions: formData.permissions,
+      });
+    }
   };
 
-  const handleSave = () => {
+  const handleSubmit = () => {
     if (!formData.msid || !formData.roleName) {
-      alert("請填寫所有必填欄位！");
+      alert("請填寫權限代碼和權限名稱！");
       return;
     }
-
-    const formattedData = {
-      ...formData,
-      operator: user?.username,
-    };
-    onSave(formattedData);
+    onSave(formData);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-[500px]">
-        <h3 className="text-xl font-semibold mb-6 text-gray-800">
-          {selectedItem ? "編輯權限" : "新增權限"}
-        </h3>
-        
-        <div className="grid grid-cols-1 gap-6">
-          <label className="flex flex-col">
-            <span className="text-gray-700 mb-1">權限代碼</span>
-            <select
-              name="msid"
-              value={formData.msid || ""}
-              onChange={handleChange}
-              className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">請選擇權限代碼</option>
-              {roles.map((role) => (
-                <option key={role.key} value={role.key}>
-                  {role.key}
-                </option>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl font-bold mb-4">
+          {isAddMode ? "新增權限" : "編輯權限"}
+        </h2>
+
+        <div className="mb-4">
+          <div className="flex flex-wrap gap-4 mb-4">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium mb-1">權限代碼</label>
+              <input
+                type="text"
+                name="msid"
+                value={formData.msid}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                disabled={!isAddMode}
+              />
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium mb-1">權限名稱</label>
+              <input
+                type="text"
+                name="roleName"
+                value={formData.roleName}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+          </div>
+
+          {!isAddMode && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {Object.entries(formData.permissions).map(([category, items]) => (
+                <div key={category} className="bg-gray-100 p-4 rounded-lg">
+                  <h3 className="font-semibold mb-2">{category}</h3>
+                  {Object.entries(items).map(([item, checked]) => (
+                    <div key={item} className="flex items-center mb-2">
+                      <input
+                        type="checkbox"
+                        id={`${category}-${item}`}
+                        checked={checked}
+                        onChange={() => handleCheckboxChange(category, item)}
+                        className="mr-2"
+                      />
+                      <label htmlFor={`${category}-${item}`}>{item}</label>
+                    </div>
+                  ))}
+                </div>
               ))}
-            </select>
-          </label>
-          
-          <label className="flex flex-col">
-            <span className="text-gray-700 mb-1">權限名稱</span>
-            <input
-              type="text"
-              name="roleName"
-              value={formData.roleName || ""}
-              readOnly
-              className="p-2 border rounded-md bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </label>
-
-          {selectedItem && (
-            <>
-              <label className="flex flex-col">
-                <span className="text-gray-700 mb-1">異動人員</span>
-                <input
-                  type="text"
-                  value={formData.operator || ""}
-                  readOnly
-                  className="p-2 border rounded-md bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </label>
-
-              <label className="flex flex-col">
-                <span className="text-gray-700 mb-1">異動日期</span>
-                <input
-                  type="text"
-                  value={formData.lastModifiedTime || ""}
-                  readOnly
-                  className="p-2 border rounded-md bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </label>
-            </>
+            </div>
           )}
         </div>
 
-        <div className="flex justify-end space-x-4 mt-8">
+        <div className="flex justify-end gap-4 mt-6">
           <button
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
             onClick={onClose}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
           >
             取消
           </button>
           <button
-            className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
             onClick={handleReset}
+            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
           >
             重新輸入
           </button>
+
           <button
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-            onClick={handleSave}
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            儲存
+            確認
           </button>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default SystemManagementMenuPermissionEditModal;

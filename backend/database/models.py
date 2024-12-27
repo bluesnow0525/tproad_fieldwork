@@ -82,6 +82,7 @@ class RoadCase(db.Model):
     rcno = db.Column(db.String(30))
     rcname = db.Column(db.String(200))
     rconame = db.Column(db.String(100))
+    rcomname = db.Column(db.String(100))
     rcotel = db.Column(db.String(20))
     rcsdate = db.Column(db.Date)
     rcedate = db.Column(db.Date)
@@ -136,7 +137,7 @@ class RoadClass(db.Model):
     
 class MenuPermission(db.Model):
     __tablename__ = 'privrole'
-    msid = db.Column(db.Integer, primary_key=True)
+    msid = db.Column(db.String(10), primary_key=True)
     mstitle = db.Column(db.String(50))
     comid = db.Column(db.String(10))
     bmodid = db.Column(db.String(20))

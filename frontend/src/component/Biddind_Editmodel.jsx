@@ -6,6 +6,11 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState({});
   const [error, setError] = useState("");
+  const caseCodeMapping = {
+    "NRP-111-146-001": "寬聯",
+    "PR001": "磐碩營造",
+    "PR002": "磐碩營造"
+  };
 
   useEffect(() => {
     if (selectedItem) {
@@ -49,6 +54,13 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
       setFormData((prev) => ({
         ...prev,
         [name]: formatDateFromInput(value),
+      }));
+    } else if (name === "caseCode") {
+      // 當專案代碼改變時，自動更新廠商
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        vendor: caseCodeMapping[value] || ""
       }));
     } else {
       setFormData((prev) => ({
@@ -113,13 +125,19 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
         <div className="grid grid-cols-2 gap-6">
           <label className="flex flex-col">
             <span className="text-gray-700 mb-1">專案代碼</span>
-            <input
-              type="text"
+            <select
               name="caseCode"
               value={formData.caseCode || ""}
               onChange={handleChange}
               className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
+            >
+              <option value="">請選擇專案代碼</option>
+              {Object.keys(caseCodeMapping).map((code) => (
+                <option key={code} value={code}>
+                  {code}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="flex flex-col">
             <span className="text-gray-700 mb-1">案名</span>
@@ -137,8 +155,8 @@ function EditModal({ isOpen, onClose, selectedItem, onSave }) {
               type="text"
               name="vendor"
               value={formData.vendor || ""}
-              onChange={handleChange}
-              className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              readOnly
+              className="p-2 border rounded-md bg-gray-100 cursor-not-allowed"
             />
           </label>
           <label className="flex flex-col">

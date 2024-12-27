@@ -7,6 +7,7 @@ function CaseReport() {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortDirection, setSortDirection] = useState('asc');
   const [filters, setFilters] = useState({
     responsibleFactory: "",
     reportDateFrom: "",
@@ -45,6 +46,21 @@ function CaseReport() {
       ...prevFilters,
       [name]: value,
     }));
+  };
+
+  const applySorting = () => {
+    const newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    setSortDirection(newDirection);
+    
+    const sortedData = [...filteredData].sort((a, b) => {
+      const dateA = new Date(a.reportDate);
+      const dateB = new Date(b.reportDate);
+      return newDirection === 'asc' 
+        ? dateA - dateB 
+        : dateB - dateA;
+    });
+    
+    setFilteredData(sortedData);
   };
 
   const applyFilters = () => {
@@ -97,16 +113,13 @@ function CaseReport() {
     }
   
     const formData = new FormData();
-    // 添加选中的项目 ID
     formData.append("rid", selectedItem.rid);
   
-    // 添加上传的文件
     for (const [key, file] of Object.entries(uploadFiles)) {
       if (file) {
         formData.append(key, file);
       }
     }
-    console.log(formData)
   
     fetch(`${url}/reportdata/write`, {
       method: "POST",
@@ -191,7 +204,6 @@ function CaseReport() {
         </button>
       </div>
 
-      {/* Pagination Controls */}
       <PaginationComponent
         currentPage={currentPage}
         totalPages={totalPages}
@@ -199,13 +211,24 @@ function CaseReport() {
         totalItems={filteredData.length}
       />
 
-      {/* Table Display */}
       <div className="bg-white rounded-md shadow-md p-4 overflow-x-auto mt-4">
         <table className="w-full text-center border-collapse">
           <thead>
             <tr className="bg-gray-200">
               <th className="p-3 border">負責廠商</th>
-              <th className="p-3 border">報表日期</th>
+              <th className="p-3 border">
+                報表日期
+                <button
+                  onClick={applySorting}
+                  className="ml-2 text-sm text-blue-500"
+                >
+                  <img
+                    src={sortDirection === 'asc' ? "/Images/arrow_D.png" : "/Images/arrow_D.png"}
+                    alt="sort"
+                    className="h-3 w-3 inline-block"
+                  />
+                </button>
+              </th>
               <th className="p-3 border">APP原始日誌總表</th>
               <th className="p-3 border">APP原始成果表</th>
               <th className="p-3 border">車巡原始日誌總表</th>
@@ -282,7 +305,6 @@ function CaseReport() {
         </table>
       </div>
 
-      {/* Upload Modal */}
       <UploadModal
         isOpen={isModalOpen}
         onClose={closeModal}

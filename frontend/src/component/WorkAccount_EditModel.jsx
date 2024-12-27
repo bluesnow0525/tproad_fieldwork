@@ -7,6 +7,12 @@ function WorkAccountEditModal({ isOpen, onClose, selectedItem, onSave }) {
   const [originalData, setOriginalData] = useState({});
 
   const accountTypes = ["系統管理員", "公務人員"];
+  const vendorOptions = [
+    "臺北市政府",
+    "公所",
+    "養⼯處",
+    "合約公司"
+  ];
 
   useEffect(() => {
     const initialData = selectedItem
@@ -82,14 +88,19 @@ function WorkAccountEditModal({ isOpen, onClose, selectedItem, onSave }) {
 
           <label className="flex flex-col">
             <span className="text-gray-700 mb-1">所屬單位</span>
-            <input
-              type="text"
+            <select
               name="vendor"
               value={formData.vendor || ""}
               onChange={handleChange}
-              
               className="p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
+            >
+              <option value="">請選擇</option>
+              {vendorOptions.map((vendor) => (
+                <option key={vendor} value={vendor}>
+                  {vendor}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label className="flex flex-col">

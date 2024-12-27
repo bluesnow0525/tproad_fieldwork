@@ -114,7 +114,7 @@ class DB_read:
                 "status": "啟用" if row['rcstatus'] == "2" else "停用",
                 "caseCode": row['rcno'] or "",
                 "caseName": row['rcname'] or "",
-                "vendor": row['rconame'] or "",
+                "vendor": row['rcomname'] or "",
                 "contractPeriod": f"{row['rcsdate'].strftime('%Y/%m/%d')} ~ {row['rcedate'].strftime('%Y/%m/%d')}" 
                                 if row['rcsdate'] and row['rcedate'] else "",
                 "contactPerson": row['rconame'] or "",
