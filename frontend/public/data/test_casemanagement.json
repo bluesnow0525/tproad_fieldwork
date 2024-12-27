@@ -1,0 +1,38 @@
+[
+  {
+    "caid":"37",
+    "result": "否",
+    "notification": "是",
+    "responsibleFactory": "磊磊營造",
+    "inspectionNumber": "11303-1114000093",
+    "district": "萬華區",
+    "roadSegment": "水源路 187號",
+    "damageItem": "AC路面",
+    "lane": "順向(1)",
+    "damageLevel": "輕",
+    "damageCondition": "人手孔缺失",
+    "reportDate": "2024/11/14",
+    "status": "待審",
+    "vehicleNumber": "RCX-7562",
+    "postedPersonnel": "RCX-7562",
+    "thumbnail": "/Images/example1.png"
+  },
+  {
+    "result": "是",
+    "notification": "否",
+    "caseObservation": "某某公司",
+    "responsibleFactory": "某某公司",
+    "inspectionNumber": "11303-1114000094",
+    "district": "中正區",
+    "roadSegment": "中華路一段 606巷3號",
+    "damageItem": "AC路面",
+    "lane": "順向(1)",
+    "damageLevel": "重",
+    "damageCondition": "路面開裂",
+    "reportDate": "2024/11/13",
+    "status": "待審",
+    "vehicleNumber": "ABX-1234",
+    "postedPersonnel": "張三",
+    "thumbnail": "/Images/example2.png"
+  }
+]

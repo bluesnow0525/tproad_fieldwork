@@ -1,0 +1,44 @@
+[
+    {
+      "responsibleFactory": "盤碩營造",
+      "reportDate": "2024-11-15",
+      "appLog": {
+        "xls": "/downloads/appLog_20241115.xlsx",
+        "pdf": "/downloads/appLog_20241115.pdf"
+      },
+      "appResult": null,
+      "carLog": {
+        "xls": "/downloads/carLog_20241115.xlsx", 
+        "pdf": null
+      },
+      "carResult": {
+        "xls": "/downloads/carResult_20241115.xlsx",
+        "pdf": "/downloads/carResult_20241115.pdf"
+      },
+      "motorcycleLog": null,
+      "motorcycleResult": {
+        "xls": "/downloads/motorcycleResult_20241115.xlsx",
+        "pdf": "/downloads/motorcycleResult_20241115.pdf"
+      }
+    },
+    {
+      "responsibleFactory": "磊磊營造",
+      "reportDate": "2024-11-14",
+      "appLog": null,
+      "appResult": {
+        "xls": "/downloads/appResult_20241114.xlsx",
+        "pdf": "/downloads/appResult_20241114.pdf"
+      },
+      "carLog": {
+        "xls": null,
+        "pdf": "/downloads/carLog_20241114.pdf"
+      },
+      "carResult": null,
+      "motorcycleLog": {
+        "xls": "/downloads/motorcycleLog_20241114.xlsx",
+        "pdf": null
+      },
+      "motorcycleResult": null
+    }
+  ]
+  
