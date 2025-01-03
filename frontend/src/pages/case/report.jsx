@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
 import PaginationComponent from "../../component/Pagination";
 import UploadModal from "../../component/Uploadmodal";
+import { useAuth } from "../../contexts/AuthContext";
 import { url } from "../../assets/url";
 
 function CaseReport() {
+  const { user } = useAuth();
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortDirection, setSortDirection] = useState('asc');
+  const [sortDirection, setSortDirection] = useState("asc");
   const [filters, setFilters] = useState({
     responsibleFactory: "",
     reportDateFrom: "",
@@ -27,18 +29,36 @@ function CaseReport() {
   const itemsPerPage = 10;
 
   const fetchData = () => {
-    fetch(`${url}/reportdata/read`)
-      .then((response) => response.json())
+    fetch(`${url}/reportdata/read`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pid: user?.pid }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (response.status === 403) {
+            alert("您沒有權限查看此資料");
+          }
+          throw new Error(errorData.error || "讀取資料失敗");
+        }
+        return response.json();
+      })
       .then((jsonData) => {
         setData(jsonData);
         setFilteredData(jsonData);
       })
-      .catch((error) => console.error("Error fetching data:", error));
-  };  
+      .catch((error) => {
+        console.error("Error fetching data:", error.message);
+        alert(error.message || "讀取資料發生錯誤，請稍後再試");
+      });
+  };
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user?.pid]); // 添加 user?.pid 依賴
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -49,17 +69,15 @@ function CaseReport() {
   };
 
   const applySorting = () => {
-    const newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    const newDirection = sortDirection === "asc" ? "desc" : "asc";
     setSortDirection(newDirection);
-    
+
     const sortedData = [...filteredData].sort((a, b) => {
       const dateA = new Date(a.reportDate);
       const dateB = new Date(b.reportDate);
-      return newDirection === 'asc' 
-        ? dateA - dateB 
-        : dateB - dateA;
+      return newDirection === "asc" ? dateA - dateB : dateB - dateA;
     });
-    
+
     setFilteredData(sortedData);
   };
 
@@ -111,16 +129,16 @@ function CaseReport() {
       alert("請選擇一個項目！");
       return;
     }
-  
+
     const formData = new FormData();
     formData.append("rid", selectedItem.rid);
-  
+
     for (const [key, file] of Object.entries(uploadFiles)) {
       if (file) {
         formData.append(key, file);
       }
     }
-  
+
     fetch(`${url}/reportdata/write`, {
       method: "POST",
       body: formData,
@@ -141,7 +159,7 @@ function CaseReport() {
         console.error("上傳錯誤：", error);
         alert("檔案上傳失敗！");
       });
-  };  
+  };
 
   const paginatedData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
@@ -223,7 +241,11 @@ function CaseReport() {
                   className="ml-2 text-sm text-blue-500"
                 >
                   <img
-                    src={sortDirection === 'asc' ? "/Images/arrow_D.png" : "/Images/arrow_D.png"}
+                    src={
+                      sortDirection === "asc"
+                        ? "/Images/arrow_D.png"
+                        : "/Images/arrow_D.png"
+                    }
                     alt="sort"
                     className="h-3 w-3 inline-block"
                   />

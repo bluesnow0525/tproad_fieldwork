@@ -21,6 +21,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = (userData) => {
     setUser(userData);
+    // 可以考慮將權限資訊存到 localStorage
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const logout = () => {

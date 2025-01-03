@@ -24,18 +24,37 @@ function SystemManagementMenuPermission() {
 
   // Fetch API 數據
   const fetchData = () => {
-    fetch(`${url}/permission/read`)
-      .then((response) => response.json())
+    fetch(`${url}/permission/read`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pid: user?.pid }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (response.status === 403) {
+            alert("您沒有權限查看此資料");
+          }
+          throw new Error(errorData.error || "Unknown error occurred");
+        }
+        return response.json();
+      })
       .then((jsonData) => {
         setData(jsonData);
         setFilteredData(jsonData);
       })
-      .catch((error) => console.error("Error fetching data:", error));
+      .catch((error) => {
+        console.error("Error fetching data:", error.message);
+        // 可以添加錯誤提示的UI顯示
+        alert(error.message || "讀取資料發生錯誤，請稍後再試");
+      });
   };
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user?.pid]); // 添加 user?.pid 依賴
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -79,8 +98,10 @@ function SystemManagementMenuPermission() {
   };
 
   const handleSave = (updatedItem) => {
-    const endpoint = !selectedItem ? `${url}/permission/add` : `${url}/permission/write`;
-    
+    const endpoint = !selectedItem
+      ? `${url}/permission/add`
+      : `${url}/permission/write`;
+
     fetch(endpoint, {
       method: "POST",
       headers: {
@@ -108,7 +129,7 @@ function SystemManagementMenuPermission() {
   const toggleSelectAll = () => {
     setSelectAll(!selectAll);
     if (!selectAll) {
-      const allIdsOnPage = paginatedData.map((item) => item.msid);  // 使用 msid 而不是 emid
+      const allIdsOnPage = paginatedData.map((item) => item.msid); // 使用 msid 而不是 emid
       setSelectedItems(allIdsOnPage);
     } else {
       setSelectedItems([]);
@@ -138,7 +159,7 @@ function SystemManagementMenuPermission() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ emid: selectedItems, operator: user?.username  }),  // 後端期望 emid 參數
+        body: JSON.stringify({ emid: selectedItems, operator: user?.username }), // 後端期望 emid 參數
       })
         .then((response) => {
           if (!response.ok) {
@@ -161,7 +182,9 @@ function SystemManagementMenuPermission() {
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <div className="bg-white p-4 rounded-md shadow-md mb-4">
-        <h2 className="text-xl font-semibold mb-4">系統管理 &gt; 選單權限管理</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          系統管理 &gt; 選單權限管理
+        </h2>
         <div className="flex items-center gap-4 mb-4">
           <input
             type="text"
@@ -237,23 +260,28 @@ function SystemManagementMenuPermission() {
           </thead>
           <tbody>
             {paginatedData.map((item) => (
-              <tr key={item.msid} className="hover:bg-gray-100">
-                <td className="p-3 border">
+              <tr key={item.msid} className="hover:bg-gray-100 border-t">
+                <td className="p-3 ">
                   <input
                     type="checkbox"
                     checked={selectedItems.includes(item.msid)}
                     onChange={() => handleSelectItem(item.msid)}
                   />
                 </td>
-                <td className="p-3 border">{item.msid}</td>
-                <td className="p-3 border">{item.roleName}</td>
-                <td className="p-3 border">{item.operator}</td>
-                <td className="p-3 border">{item.lastModifiedTime}</td>
-                <td className="p-3 border">
+                <td className="p-3 ">{item.msid}</td>
+                <td className="p-3 ">{item.roleName}</td>
+                <td className="p-3 ">{item.operator}</td>
+                <td className="p-3 ">{item.lastModifiedTime}</td>
+                <td className="p-3  w-32">
                   <button
-                    className="p-2 bg-blue-500 text-white rounded shadow"
+                    className="p-2 bg-blue-500 text-white text-sm rounded shadow flex"
                     onClick={() => openModal(item)}
                   >
+                    <img
+                      src="/Images/icon-edit.png"
+                      alt="calendar"
+                      className="h-4 w-4 mr-1 mt-1"
+                    />
                     編輯權限
                   </button>
                 </td>

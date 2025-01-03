@@ -57,8 +57,11 @@ function CaseManagement() {
   const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
-    // 定義日期範圍
-    const requestData = filters;
+    // 加入 user.pid 到請求資料中
+    const requestData = {
+      ...filters,
+      pid: user?.pid, // 添加使用者 ID
+    };
     setLoading(true);
 
     fetch(`${url}/caseinfor/read`, {
@@ -70,8 +73,11 @@ function CaseManagement() {
     })
       .then(async (response) => {
         if (!response.ok) {
-          // 如果 response 非 OK，嘗試解析錯誤訊息
           const errorData = await response.json();
+          // 特別處理權限錯誤
+          if (response.status === 403) {
+            alert("您沒有權限查看此資料");
+          }
           throw new Error(errorData.error || "Unknown error occurred");
         }
         return response.json();
@@ -82,13 +88,16 @@ function CaseManagement() {
       })
       .catch((error) => {
         console.error("Error fetching caseinfor data:", error.message);
-        // 可以在這裡設置錯誤狀態以便顯示在 UI 上
         setError(error.message);
+        // 如果是權限錯誤，可能想要特別處理
+        if (error.message === "您沒有權限查看此資料") {
+          // 特別的UI處理，例如顯示一個特定的錯誤訊息
+        }
       })
       .finally(() => {
-        setLoading(false); // 完成 Loading
+        setLoading(false);
       });
-  }, []);
+  }, [user?.pid]); // 加入 user?.pid 作為依賴
 
   const toggleSelectAll = () => {
     setSelectAll(!selectAll);
@@ -220,7 +229,11 @@ function CaseManagement() {
   };
 
   const applyFilters = () => {
-    const requestData = filters;
+    // 將 pid 加入請求資料中
+    const requestData = {
+      ...filters,
+      pid: user?.pid, // 添加 user pid
+    };
     console.log(requestData);
     setLoading(true);
 
@@ -231,9 +244,13 @@ function CaseManagement() {
       },
       body: JSON.stringify(requestData),
     })
-      .then((response) => {
+      .then(async (response) => {
         if (!response.ok) {
-          throw new Error("Network response was not ok");
+          const errorData = await response.json();
+          if (response.status === 403) {
+            throw new Error("您沒有權限查看此資料");
+          }
+          throw new Error(errorData.error || "Network response was not ok");
         }
         return response.json();
       })
@@ -244,9 +261,10 @@ function CaseManagement() {
       })
       .catch((error) => {
         console.error("Error fetching caseinfor data:", error);
+        alert(error.message || "讀取資料發生錯誤，請稍後再試");
       })
       .finally(() => {
-        setLoading(false); // 完成 Loading
+        setLoading(false);
       });
   };
 

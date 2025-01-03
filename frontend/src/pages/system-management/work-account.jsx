@@ -25,19 +25,37 @@ function SystemManagementWorkAccount() {
 
   // Fetch API 數據
   const fetchData = () => {
-    fetch(`${url}/workaccount/read`)
-      .then((response) => response.json())
+    fetch(`${url}/workaccount/read`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pid: user?.pid }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (response.status === 403) {
+            alert("您沒有權限查看此資料");
+          }
+          throw new Error(errorData.error || "Unknown error occurred");
+        }
+        return response.json();
+      })
       .then((jsonData) => {
         setData(jsonData);
         setFilteredData(jsonData);
         console.log(jsonData);
       })
-      .catch((error) => console.error("Error fetching data:", error));
+      .catch((error) => {
+        console.error("Error fetching data:", error.message);
+        setError(error.message);
+      });
   };
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user?.pid]); // 加入 user?.pid 作為依賴
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -256,25 +274,30 @@ function SystemManagementWorkAccount() {
           </thead>
           <tbody>
             {paginatedData.map((item) => (
-              <tr key={item.emid} className="hover:bg-gray-100">
-                <td className="p-3 border">
+              <tr key={item.emid} className="hover:bg-gray-100 border-t">
+                <td className="p-3 ">
                   <input
                     type="checkbox"
                     checked={selectedItems.includes(item.emid)}
                     onChange={() => handleSelectItem(item.emid)}
                   />
                 </td>
-                <td className="p-3 border">{item.status}</td>
-                <td className="p-3 border">{item.vendor}</td>
-                <td className="p-3 border">{item.account}</td>
-                <td className="p-3 border">{item.name}</td>
-                <td className="p-3 border">{item.msid}</td>
-                <td className="p-3 border">{item.createdDate}</td>
-                <td className="p-3 border">
+                <td className="p-3 ">{item.status}</td>
+                <td className="p-3 ">{item.vendor}</td>
+                <td className="p-3 ">{item.account}</td>
+                <td className="p-3 ">{item.name}</td>
+                <td className="p-3 ">{item.msid}</td>
+                <td className="p-3 ">{item.createdDate}</td>
+                <td className="p-3 w-24">
                   <button
-                    className="p-2 bg-blue-500 text-white rounded shadow"
+                    className="p-2 bg-blue-500 text-white rounded shadow flex"
                     onClick={() => openModal(item)}
                   >
+                    <img
+                      src="/Images/icon-edit.png"
+                      alt="calendar"
+                      className="h-4 w-4 mr-1 mt-1"
+                    />
                     編輯
                   </button>
                 </td>

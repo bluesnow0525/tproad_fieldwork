@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import PaginationComponent from "../../component/Pagination";
+import { useAuth } from "../../contexts/AuthContext";
 import { url } from "../../assets/url";
 
 function SystemManagementChangeLog() {
+  const { user } = useAuth();
   const [data, setData] = useState([]);
   const today = new Date().toISOString().split("T")[0];
   const [loading, setLoading] = useState(false);
@@ -19,28 +21,42 @@ function SystemManagementChangeLog() {
 
   // Fetch API 數據，將篩選條件傳送到後端
   const fetchData = () => {
-    setLoading(true); // 開始載入時設置 loading
+    setLoading(true);
     fetch(`${url}/systemlog/read`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(filters),
+      body: JSON.stringify({
+        ...filters,
+        pid: user?.pid, // 添加 pid
+      }),
     })
-      .then((response) => response.json())
+      .then(async (response) => {
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (response.status === 403) {
+            alert("您沒有權限查看此資料");
+          }
+          throw new Error(errorData.error || "查詢發生錯誤");
+        }
+        return response.json();
+      })
       .then((jsonData) => {
         setData(jsonData);
-        setLoading(false); // 載入完成時關閉 loading
       })
       .catch((error) => {
-        console.error("Error fetching data:", error);
-        setLoading(false); // 發生錯誤時也要關閉 loading
+        console.error("Error fetching data:", error.message);
+        alert(error.message || "讀取資料發生錯誤，請稍後再試");
+      })
+      .finally(() => {
+        setLoading(false);
       });
   };
 
   useEffect(() => {
     fetchData();
-  }, []); // 初始載入
+  }, [user?.pid]); // 添加 user?.pid 依賴
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -153,12 +169,12 @@ function SystemManagementChangeLog() {
           </thead>
           <tbody>
             {paginatedData.map((item) => (
-              <tr key={item.slid} className="hover:bg-gray-100">
-                <td className="p-3 border">{item.sflag}</td>
-                <td className="p-3 border">{item.slaccount}</td>
-                <td className="p-3 border">{item.sname}</td>
-                <td className="p-3 border text-blue-700">{item.slevent}</td>
-                <td className="p-3 border">{item.sodate}</td>
+              <tr key={item.slid} className="hover:bg-gray-100 border-t">
+                <td className="p-3 ">{item.sflag}</td>
+                <td className="p-3 ">{item.slaccount}</td>
+                <td className="p-3 ">{item.sname}</td>
+                <td className="p-3  text-blue-700">{item.slevent}</td>
+                <td className="p-3 ">{item.sodate}</td>
               </tr>
             ))}
           </tbody>

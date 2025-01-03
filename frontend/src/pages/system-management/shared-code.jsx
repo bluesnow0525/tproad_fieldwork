@@ -23,21 +23,33 @@ function SystemManagementSharedCode() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user?.pid]); // 添加 user?.pid 依賴
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${url}/sharedcode/read`);
+      const response = await fetch(`${url}/sharedcode/read`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ pid: user?.pid }),
+      });
+
       if (!response.ok) {
-        throw new Error("網路響應錯誤");
+        const errorData = await response.json();
+        if (response.status === 403) {
+          alert("您沒有權限查看此資料");
+        }
+        throw new Error(errorData.error || "網路響應錯誤");
       }
+
       const jsonData = await response.json();
       setData(jsonData);
       setFilteredData(jsonData);
     } catch (error) {
       console.error("讀取資料錯誤:", error);
-      alert("讀取資料發生錯誤，請稍後再試");
+      alert(error.message || "讀取資料發生錯誤，請稍後再試");
     } finally {
       setLoading(false);
     }
@@ -273,8 +285,13 @@ function SystemManagementSharedCode() {
                 <td className="p-3 text-center">
                   <button
                     onClick={() => openModal(item)}
-                    className="p-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                    className="p-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex"
                   >
+                    <img
+                      src="/Images/icon-edit.png"
+                      alt="calendar"
+                      className="h-4 w-4 mr-1 mt-1"
+                    />
                     編輯
                   </button>
                 </td>
