@@ -333,18 +333,64 @@ function CaseManagement() {
       alert(result.message);
 
       // 更新本地數據
-      const updatedData = await fetch(`${url}/caseinfor/read`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(filters),
-      }).then((res) => res.json());
+      // const updatedData = await fetch(`${url}/caseinfor/read`, {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify(filters),
+      // }).then((res) => res.json());
 
-      setFilteredData(updatedData);
+      // setFilteredData(updatedData);
     } catch (error) {
       console.error("Error updating data:", error);
       alert("更新失敗，請稍後再試");
+    }
+  };
+
+  const handleDelete = () => {
+    if (!selectedItems.length) {
+      alert("請先勾選要刪除的項目！");
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      "確定要刪除選取的項目嗎？此操作無法復原。"
+    );
+    if (confirmDelete) {
+      setLoading(true);
+
+      // 發送刪除請求
+      fetch(`${url}/caseinfor/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          user: user?.username, // 傳送用戶資訊到後端
+        },
+        body: JSON.stringify({
+          ids: selectedItems,
+        }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("刪除失敗");
+          }
+          return response.json();
+        })
+        .then((result) => {
+          alert(`成功刪除 ${result.deleted_count} 筆資料`);
+          setSelectedItems([]); // 清空選取項目
+
+          // 重新載入資料
+          applyFilters();
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("刪除過程中發生錯誤，請稍後再試");
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   };
 
@@ -631,12 +677,20 @@ function CaseManagement() {
         totalItems={filteredData.length} // 傳入總資料筆數
       />
 
-      <button
-        onClick={handleConfirmReview}
-        className="p-2 bg-blue-500 text-white rounded shadow w-20 mt-4"
-      >
-        審查通過
-      </button>
+      <div className="flex space-x-2 mt-4">
+        <button
+          onClick={handleConfirmReview}
+          className="p-2 bg-blue-500 text-white rounded shadow w-20"
+        >
+          審查通過
+        </button>
+        <button
+          onClick={handleDelete}
+          className="p-2 bg-red-500 text-white rounded shadow w-14"
+        >
+          刪除
+        </button>
+      </div>
 
       {/* Table Display */}
       <div className="bg-white rounded-md shadow-md p-4 overflow-x-auto mt-2">
@@ -799,7 +853,7 @@ function CaseManagement() {
                   {item.photoBefore ? (
                     <div className="relative group">
                       <img
-                        src={`${url}/files/img/${item.photoBefore}`}
+                        src={`${url}/files/img/${item.reportDate.split("/").join("")}/${item.photoBefore}`}
                         alt="縮圖"
                         className="w-32 h-20 cursor-pointer"
                       />
@@ -813,7 +867,7 @@ function CaseManagement() {
                               施工前
                             </p>
                             <img
-                              src={`${url}/files/img/${item.photoBefore}`}
+                              src={`${url}/files/img/${item.reportDate.split("/").join("")}/${item.photoBefore}`}
                               alt="施工前大圖"
                               className="w-[500px] h-auto object-contain"
                             />
@@ -824,7 +878,7 @@ function CaseManagement() {
                             </p>
                             {item.photoAfter ? (
                               <img
-                                src={`${url}/files/img/${item.photoAfter}`}
+                                src={`${url}/files/img/${item.reportDate.split("/").join("")}/${item.photoAfter}`}
                                 alt="施工後大圖"
                                 className="w-[500px] h-auto object-contain"
                               />

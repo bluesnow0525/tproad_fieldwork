@@ -12,6 +12,7 @@ from routes.sharecode import sharedcode_bp
 from routes.permission import permission_bp
 from routes.systemlog import systemlog_bp
 from routes.login import login_bp
+from routes.upload_caseinfor import upcasedata_bp
 
 def create_app():
     app = Flask(__name__)
@@ -34,6 +35,7 @@ def create_app():
     app.register_blueprint(permission_bp, url_prefix='/permission')
     app.register_blueprint(systemlog_bp, url_prefix='/systemlog')
     app.register_blueprint(login_bp, url_prefix='/login')
+    app.register_blueprint(upcasedata_bp, url_prefix='/api')
     app.register_blueprint(files_bp, url_prefix='/files')  # 註冊檔案相關路由
 
     return app

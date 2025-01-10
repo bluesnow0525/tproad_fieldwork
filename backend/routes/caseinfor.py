@@ -252,27 +252,45 @@ def write_caseinfor():
             casno = record.get("inspectionNumber")
             print(record)
             
+            # 取得日期資料夾名稱 (從 reportDate 建立)
+            date_folder = None
+            if record.get("reportDate"):
+                try:
+                    date_obj = datetime.strptime(record.get("reportDate"), "%Y/%m/%d")
+                    date_folder = date_obj.strftime('%Y%m%d')
+                except ValueError:
+                    return jsonify({"error": "日期格式錯誤"}), 400
+            
             # Handle image files if present
             if request.files:
                 if 'photoBefore' in request.files:
                     file = request.files['photoBefore']
                     if file and file.filename:
+                        # Create date folder if it doesn't exist
+                        folder_path = os.path.join(UPLOAD_FOLDER, date_folder)
+                        os.makedirs(folder_path, exist_ok=True)
+                        
                         # Create filename using case number
                         ext = os.path.splitext(file.filename)[1]
                         new_filename = f"{casno}_before{ext}"
-                        file_path = os.path.join(UPLOAD_FOLDER, new_filename)
+                        file_path = os.path.join(folder_path, new_filename)
                         file.save(file_path)
-                        record['photoBefore'] = new_filename
+                        record['photoBefore'] = new_filename  # 只存檔名
 
                 if 'photoAfter' in request.files:
                     file = request.files['photoAfter']
                     if file and file.filename:
+                        # Create date folder if it doesn't exist
+                        folder_path = os.path.join(UPLOAD_FOLDER, date_folder)
+                        os.makedirs(folder_path, exist_ok=True)
+                        
                         ext = os.path.splitext(file.filename)[1]
                         new_filename = f"{casno}_after{ext}"
-                        file_path = os.path.join(UPLOAD_FOLDER, new_filename)
+                        file_path = os.path.join(folder_path, new_filename)
                         file.save(file_path)
-                        record['photoAfter'] = new_filename
+                        record['photoAfter'] = new_filename  # 只存檔名
 
+            # 建立資料庫存儲資料
             unformatted_data = {
                 "caid": record.get("caid"),
                 "casno": casno,
@@ -287,7 +305,7 @@ def write_caseinfor():
                 "caAddr": record.get("roadSegment"),
                 "caRoad": record.get("caRoad"),
                 "catype": "A" if record.get("damageItem") == "AC路面" else "B",
-                "caroadDirect": "F" if record.get("laneDirection") == "順向" else None if record.get("laneDirection") == "逆向" else None,
+                "caroadDirect": "F" if record.get("laneDirection") == "順向" else None,
                 "caroadNum": int(record.get("laneNumber")) if record.get("laneNumber") else None,
                 "cabaddegree": {"輕": "1", "中": "2", "重": "3"}.get(record.get("damageLevel")),
                 "cabad": {
@@ -345,11 +363,11 @@ def write_caseinfor():
                 if records:
                     db.session.query(CaseInfor).filter_by(caid=caid).update(unformatted_data)
                     new_log = SystemLog(
-                        slaccount=record.get("modifiedBy"),        # 帳號
-                        sname='案件管理 > 案件管理',             # 姓名
-                        slevent=f"巡查編號：{casno}，查報日期：{record.get("reportDate")}",         # 事件描述
-                        sodate=datetime.now(),      # 操作日期時間
-                        sflag='E'                   # 狀態標記
+                        slaccount=record.get("modifiedBy"),
+                        sname='案件管理 > 案件管理',
+                        slevent=f"巡查編號：{casno}，查報日期：{record.get('reportDate')}",
+                        sodate=datetime.now(),
+                        sflag='E'
                     )
                     db.session.add(new_log)
                 else:
@@ -363,8 +381,61 @@ def write_caseinfor():
 
     except Exception as e:
         db.session.rollback()
-        if os.path.exists(file_path):
-            os.remove(file_path)  # Clean up uploaded file if database operation fails
+        return jsonify({"error": str(e)}), 500
+
+@caseinfor_bp.route('/delete', methods=['POST'])
+def delete_caseinfor():
+    try:
+        data = request.get_json()
+        ids_to_delete = data.get('ids', [])
+        
+        if not ids_to_delete:
+            return jsonify({"error": "No IDs provided for deletion"}), 400
+            
+        # 刪除相關圖片
+        cases = CaseInfor.query.filter(CaseInfor.caid.in_(ids_to_delete)).all()
+        for case in cases:
+            # 根據日期取得資料夾名稱
+            if case.cadate:
+                date_folder = case.cadate.strftime('%Y%m%d')
+                
+                # 刪除相關的圖片文件
+                for img_field in [case.caimg_1, case.caimg_2, case.caimg_3]:
+                    if img_field:
+                        try:
+                            # 組合完整路徑
+                            file_path = os.path.join(UPLOAD_FOLDER, date_folder, img_field)
+                            if os.path.exists(file_path):
+                                os.remove(file_path)
+                                # 檢查並刪除空的日期資料夾
+                                folder_path = os.path.dirname(file_path)
+                                if not os.listdir(folder_path):
+                                    os.rmdir(folder_path)
+                        except Exception as e:
+                            print(f"Error deleting image file {img_field}: {str(e)}")
+            
+            # 記錄系統日誌
+            new_log = SystemLog(
+                slaccount=request.headers.get('user', 'unknown'),
+                sname='案件管理 > 案件管理',
+                slevent=f"刪除巡查編號：{case.casno}",
+                sodate=datetime.now(),
+                sflag='D'
+            )
+            db.session.add(new_log)
+
+        # 執行批量刪除
+        delete_result = CaseInfor.query.filter(CaseInfor.caid.in_(ids_to_delete)).delete(synchronize_session=False)
+        
+        db.session.commit()
+        
+        return jsonify({
+            "message": f"Successfully deleted {delete_result} records",
+            "deleted_count": delete_result
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500
     
 @caseinfor_bp.route('/road-segments/<district>', methods=['GET'])

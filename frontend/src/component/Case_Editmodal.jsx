@@ -159,23 +159,20 @@ function EditModal({
 
   const handleConfirm = async () => {
     const formDataToSend = new FormData();
-    const operator = user?.username;  // 或其他你想要設定的值
+    const operator = user?.username; // 或其他你想要設定的值
 
     // 先將 modifiedBy 排除在外的其他欄位處理
     const { modifiedBy, ...restFormData } = formData;
 
-    const reversedData = Object.keys(restFormData).reduce(
-      (acc, key) => {
-        const originalKey = Object.keys(fieldMapping).find(
-          (k) => fieldMapping[k] === key
-        );
-        if (originalKey) {
-          acc[originalKey] = restFormData[key] === null ? "" : restFormData[key];
-        }
-        return acc;
-      },
-      {}
-    );
+    const reversedData = Object.keys(restFormData).reduce((acc, key) => {
+      const originalKey = Object.keys(fieldMapping).find(
+        (k) => fieldMapping[k] === key
+      );
+      if (originalKey) {
+        acc[originalKey] = restFormData[key] === null ? "" : restFormData[key];
+      }
+      return acc;
+    }, {});
 
     // 先設定 modifiedBy
     formDataToSend.append("modifiedBy", operator);
@@ -533,14 +530,17 @@ function EditModal({
                     {newImages[
                       key === "施工前遠景照片" ? "photoBefore" : "photoAfter"
                     ]?.preview ||
-                    (formData[key] && `${url}/files/img/${formData[key]}`) ? (
+                    (formData[key] && formData.查報日期) ? (
                       <img
                         src={
                           newImages[
                             key === "施工前遠景照片"
                               ? "photoBefore"
                               : "photoAfter"
-                          ]?.preview || `${url}/files/img/${formData[key]}`
+                          ]?.preview ||
+                          `${url}/files/img/${formData.查報日期.split("/").join("")}/${
+                            formData[key]
+                          }`
                         }
                         alt={key}
                         className="w-full h-full object-contain"
