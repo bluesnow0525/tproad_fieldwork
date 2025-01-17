@@ -11,6 +11,7 @@ from database.models import PermissionMain, PermissionDetail
 from database.extensions import db
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
+from werkzeug.security import generate_password_hash
 
 workaccount_bp = Blueprint('workaccount', __name__)
 
@@ -130,6 +131,8 @@ def write_workaccount():
         reverse_msid_mapping = {v: k for k, v in msid_mapping.items()}
         etype = ",".join([role_mapping.get(role, "") for role in data.get("role", []) if role_mapping.get(role)])
         reverse_vendor_mapping = {v: k for k, v in vendor_mapping.items()}
+        
+        password_hash = generate_password_hash(data.get("password", "")) if data.get("password") else ""
 
         # 將格式化資料轉換為資料庫資料格式
         db_data = {
@@ -143,7 +146,7 @@ def write_workaccount():
             "jobdate": datetime.strptime(data.get("createdDate"), "%Y/%m/%d") if data.get("createdDate") else None,
             "bmodid": data.get("operator", "system"),  # 使用提供的修改人資訊，默認為 "system"
             "bmoddate": datetime.now(),
-            "emppasswd": data.get("password", ""),  # 處理密碼（如果提供）
+            "emppasswd": password_hash,  # 處理密碼（如果提供）
             "entel": data.get("phone", ""),
             "enemail": data.get("email", ""),
             "empcomment": data.get("notes", ""),
@@ -156,6 +159,10 @@ def write_workaccount():
         if emid:  # 更新操作
             record = db.session.query(Fleet).filter_by(emid=emid).first()
             if record:
+                # 如果沒有提供新密碼，保留原密碼
+                if not data.get("password"):
+                    db_data.pop("emppasswd")
+                    
                 for key, value in db_data.items():
                     setattr(record, key, value)
                 new_log = SystemLog(
@@ -173,10 +180,6 @@ def write_workaccount():
             if existing_account:
                 return jsonify({"error": f"帳號 '{data.get('account')}' 已存在"}), 400
                 
-            # 檢查密碼是否重複
-            existing_password = db.session.query(Fleet).filter_by(emppasswd=data.get("password")).first()
-            if existing_password:
-                return jsonify({"error": "密碼已被其他使用者使用"}), 400
             new_record = Fleet(**db_data)
             db.session.add(new_record)
             new_log = SystemLog(

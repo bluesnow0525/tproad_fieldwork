@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import PaginationComponent from "../../component/Pagination";
 import EditModal from "../../component/Case_Editmodal";
+import RoadSegmentModal from "../../component/RoadSegmentModal";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { url } from "../../assets/url";
@@ -53,6 +54,7 @@ function CaseManagement() {
   const itemsPerPage = 50;
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
+  const [isRoadSegmentModalOpen, setIsRoadSegmentModalOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -129,14 +131,13 @@ function CaseManagement() {
       alert("請先勾選項目！");
       return;
     }
+    setIsRoadSegmentModalOpen(true);
+  };
 
+  // Add this new function to handle the road segment selection
+  const handleRoadSegmentConfirm = (updatedItems) => {
     const confirmAction = window.confirm("確認審查通過？");
     if (confirmAction) {
-      const updatedItems = selectedItems.map((caid) => ({
-        caid,
-        result: "是",
-      }));
-
       // 發送更新請求至後端
       fetch(`${url}/caseinfor/write`, {
         method: "POST",
@@ -151,6 +152,7 @@ function CaseManagement() {
         })
         .then((result) => {
           console.log("Review successful:", result);
+          alert("審查成功")
 
           // 更新本地數據
           setFilteredData((prevFilteredData) =>
@@ -162,6 +164,7 @@ function CaseManagement() {
           );
 
           setSelectedItems([]); // 清空選取項目
+          setIsRoadSegmentModalOpen(false); // 關閉modal
         })
         .catch((error) => console.error("Error updating data:", error));
     }
@@ -330,7 +333,7 @@ function CaseManagement() {
       const result = await response.json();
 
       console.log("Update successful:", result);
-      alert(result.message);
+      alert("更新成功");
 
       // 更新本地數據
       // const updatedData = await fetch(`${url}/caseinfor/read`, {
@@ -908,6 +911,13 @@ function CaseManagement() {
         onConfirm={handleEditConfirm}
         defaultValues={selectedItem || {}} // 預設值為選中的行數據
         fieldMapping={fieldMapping}
+      />
+      {/* Add this before the final closing div */}
+      <RoadSegmentModal
+        isOpen={isRoadSegmentModalOpen}
+        onClose={() => setIsRoadSegmentModalOpen(false)}
+        onConfirm={handleRoadSegmentConfirm}
+        selectedItems={selectedItems}
       />
       {loading && (
         <div className="fixed top-0 left-0 w-full h-full bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">

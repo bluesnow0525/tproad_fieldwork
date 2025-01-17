@@ -11,6 +11,7 @@ from database.models import PermissionMain, PermissionDetail
 from database.extensions import db
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
+from werkzeug.security import generate_password_hash
 
 fleetdata_bp = Blueprint('fleet', __name__)
 
@@ -89,11 +90,13 @@ def read_fleet():
 
 @fleetdata_bp.route('/write', methods=['POST'])
 def write_fleet():
-    data = request.json  # 接收 JSON 資料
+    data = request.json
     if not data:
         return jsonify({"error": "請提供有效的 JSON 資料"}), 400
 
     try:
+        print("收到的請求數據:", data)  # 檢查收到的數據
+        
         # 將角色列表轉換為逗號分隔的字串
         role_mapping = {
             "公司管理員": "1",
@@ -103,6 +106,17 @@ def write_fleet():
             "巡查人員": "5"
         }
         etype = ",".join([role_mapping.get(role, "") for role in data.get("role", []) if role_mapping.get(role)])
+        print("處理後的角色字串:", etype)  # 檢查角色轉換
+
+        # 生成密碼雜湊值
+        try:
+            raw_password = data.get("password", "")
+            print("原始密碼長度:", len(raw_password))  # 檢查原始密碼
+            password_hash = generate_password_hash(raw_password) if raw_password else ""
+            print("生成的密碼雜湊值長度:", len(password_hash))  # 檢查雜湊值
+        except Exception as e:
+            print("密碼雜湊過程發生錯誤:", str(e))
+            return jsonify({"error": f"密碼加密錯誤: {str(e)}"}), 500
 
         # 將格式化資料轉換為資料庫資料格式
         db_data = {
@@ -113,9 +127,9 @@ def write_fleet():
             "empname": data.get("name"),
             "etype": etype,
             "jobdate": datetime.strptime(data.get("createdDate"), "%Y/%m/%d") if data.get("createdDate") else None,
-            "bmodid": data.get("operator", "system"),  # 使用提供的修改人資訊，默認為 "system"
+            "bmodid": data.get("operator", "system"),
             "bmoddate": datetime.now(),
-            "emppasswd": data.get("password", ""),  # 處理密碼（如果提供）
+            "emppasswd": password_hash,
             "entel": data.get("phone", ""),
             "enemail": data.get("email", ""),
             "empcomment": data.get("notes", ""),
@@ -123,53 +137,72 @@ def write_fleet():
             "logindate": datetime.strptime(data.get("lastLoginTime"), "%Y/%m/%d %H:%M:%S") if data.get("lastLoginTime") else None,
             "loginip": data.get("lastLoginIp", ""),
         }
+        print("準備寫入的資料:", {k: v for k, v in db_data.items() if k != 'emppasswd'})  # 打印除密碼外的所有資料
 
         emid = data.get("emid")
         if emid:  # 更新操作
+            print(f"執行更新操作, emid: {emid}")
             record = db.session.query(Fleet).filter_by(emid=emid).first()
             if record:
+                if not data.get("password"):
+                    print("未提供新密碼，保留原密碼")
+                    db_data.pop("emppasswd")
+                
                 for key, value in db_data.items():
                     setattr(record, key, value)
                 new_log = SystemLog(
-                    slaccount=data.get("operator"),        # 帳號
-                    sname='系統管理 > 公司車隊管理',             # 姓名
-                    slevent=f"帳號:{data.get("account")}，姓名:{data.get("name")}",         # 事件描述
-                    sodate=datetime.now(),      # 操作日期時間
-                    sflag='E'                   # 狀態標記
+                    slaccount=data.get("operator"),
+                    sname='系統管理 > 公司車隊管理',
+                    slevent=f"帳號:{data.get('account')}，姓名:{data.get('name')}",
+                    sodate=datetime.now(),
+                    sflag='E'
                 )
                 db.session.add(new_log)
             else:
                 return jsonify({"error": f"ID {emid} 的記錄不存在，無法更新"}), 404
         else:  # 新增操作
+            print("執行新增操作")
             existing_account = db.session.query(Fleet).filter_by(empid=data.get("account")).first()
             if existing_account:
                 return jsonify({"error": f"帳號 '{data.get('account')}' 已存在"}), 400
-                
-            # 檢查密碼是否重複
-            existing_password = db.session.query(Fleet).filter_by(emppasswd=data.get("password")).first()
-            if existing_password:
-                return jsonify({"error": "密碼已被其他使用者使用"}), 400
             
             db_data["msid"] = "A03"
-            new_record = Fleet(**db_data)
-            db.session.add(new_record)
+            try:
+                new_record = Fleet(**db_data)
+                db.session.add(new_record)
+                print("新記錄已添加到 session")
+            except Exception as e:
+                print("創建新記錄時發生錯誤:", str(e))
+                raise
+
             new_log = SystemLog(
-                slaccount=data.get("operator"),        # 帳號
-                sname='系統管理 > 公司車隊管理',             # 姓名
-                slevent=f"帳號:{data.get("account")}，姓名:{data.get("name")}",         # 事件描述
-                sodate=datetime.now(),      # 操作日期時間
-                sflag='A'                   # 狀態標記
+                slaccount=data.get("operator"),
+                sname='系統管理 > 公司車隊管理',
+                slevent=f"帳號:{data.get('account')}，姓名:{data.get('name')}",
+                sodate=datetime.now(),
+                sflag='A'
             )
             db.session.add(new_log)
 
-        db.session.commit()
-        return jsonify({"message": "資料已成功寫入"}), 200
+        try:
+            db.session.commit()
+            print("資料庫提交成功")
+            return jsonify({"message": "資料已成功寫入"}), 200
+        except Exception as e:
+            print("提交到資料庫時發生錯誤:", str(e))
+            db.session.rollback()
+            raise
 
     except ValueError as ve:
+        print("資料格式錯誤:", str(ve))
         return jsonify({"error": f"資料格式錯誤: {str(ve)}"}), 400
     except SQLAlchemyError as sae:
+        print("SQLAlchemy錯誤:", str(sae))
         db.session.rollback()
         return jsonify({"error": f"資料庫錯誤: {str(sae)}"}), 500
+    except Exception as e:
+        print("未預期的錯誤:", str(e))
+        return jsonify({"error": f"未預期的錯誤: {str(e)}"}), 500
 
 @fleetdata_bp.route('/delete', methods=['POST'])
 def delete_fleet():

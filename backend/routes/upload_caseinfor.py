@@ -4,7 +4,9 @@ import base64
 from flask import request, jsonify, Blueprint
 from sqlalchemy import func
 from database.models import CaseInfor
+from database.models import Fleet
 from database.extensions import db
+from werkzeug.security import check_password_hash
 
 # Define upload folder path
 UPLOAD_FOLDER = "D:/tproad/files/img/"
@@ -141,7 +143,13 @@ def upload_case_data():
         }), 500
 
 def verify_credentials(account, password):
-    return account == 'testacc' and password == '3Fz7G9@5k1'
+    user = db.session.query(Fleet).filter_by(empid=account, ifuse='y').first()
+    if not user:
+        return False
+    if check_password_hash(user.emppasswd, password) or user.emppasswd == password:
+        return True
+    else:
+        return False
 
 def validate_base64_image(base64_string):
     """驗證 base64 字串是否為有效的圖片"""
@@ -249,18 +257,32 @@ def validate_format(data):
     if data['cafrom'] not in ['1', '2']:
         errors.append("來源必須為 1(APP) 或 2(車巡)")
 
-    # Image validation for required image field (caimg_1)
+    # 檢查必要的圖片提供
+    if data['cafrom'] == '1':  # APP來源
+        if not data.get('caimg_1'):
+            errors.append("APP來源必須上傳損壞照片(caimg_1)")
+    
+    elif data['cafrom'] == '2':  # 車巡來源
+        if not data.get('caimg_1'):
+            errors.append("車巡來源必須上傳損壞照片(caimg_1)")
+        if not data.get('caimg_2'):
+            errors.append("車巡來源必須上傳修復照片(caimg_2)")
+
+    # 檢查所有提供的圖片格式
     if data.get('caimg_1'):
         is_valid, error_msg = validate_base64_image(data['caimg_1'])
         if not is_valid:
-            errors.append(error_msg)
-
-    # Optional images validation (caimg_2, caimg_3)
-    for field in ['caimg_2', 'caimg_3']:
-        if data.get(field):
-            is_valid, error_msg = validate_base64_image(data[field])
-            if not is_valid:
-                errors.append(f"{field}: {error_msg}")
+            errors.append(f"損壞照片: {error_msg}")
+    
+    if data.get('caimg_2'):
+        is_valid, error_msg = validate_base64_image(data['caimg_2'])
+        if not is_valid:
+            errors.append(f"修復照片: {error_msg}")
+    
+    if data.get('caimg_3'):
+        is_valid, error_msg = validate_base64_image(data['caimg_3'])
+        if not is_valid:
+            errors.append(f"細節照片: {error_msg}")
 
     # Optional numeric field validations
     for field in ['calength', 'cawidth', 'caarea']:

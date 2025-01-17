@@ -1,0 +1,334 @@
+import React, { useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, LayersControl, ZoomControl, CircleMarker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import { Icon } from 'leaflet';
+
+const createCustomIcon = (cabad_code) => {
+  return new Icon({
+    iconUrl: `/Images/${cabad_code}.png`,
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    iconSize: [30, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+};
+
+const CaseDisplay = () => {
+  const today = new Date().toISOString().split("T")[0];
+  const [filterParams, setFilterParams] = useState({
+    startDate: today,
+    endDate: today,
+    districts: {
+      '中正區': false,
+      '大同區': false,
+      '中山區': false,
+      '松山區': false,
+      '大安區': false,
+      '萬華區': true,
+      '信義區': false,
+      '士林區': false,
+      '北投區': false,
+      '內湖區': false,
+      '南港區': false,
+      '文山區': false
+    },
+    sources: {
+      'APP通報': false,
+      '車巡': false,
+      '機巡': false
+    },
+    damageTypes: {
+      'AC路面': false,
+      '人行道及相關設施': false
+    }
+  });
+
+  // 模擬資料
+  const mockCases = [
+    {
+      caid: '11403-0108001277',
+      cadate: '2025-01-08 10:34:10',
+      cabad: '人手孔缺失',
+      cabad_code: 'A1',
+      caAddr: '寧波西街83之5號',
+      caDistrict: '中正區',
+      cagis_lat: 25.0389570700,
+      cagis_lon: 121.5218481400,
+      dimensions: {
+        length: '1.6142 m',
+        width: '0.7248 m',
+        area: '0.2621 m²'
+      },
+      images: {
+        before: '/cases/11403-0108001277_before.jpg',
+        after: '/cases/11403-0108001277_after.jpg'
+      }
+    },
+    {
+      caid: '11403-0108001278',
+      cadate: '2025-01-08 11:15:22',
+      cabad: '人手孔缺失',
+      cabad_code: 'A2',
+      caAddr: '寧波西街85號',
+      caDistrict: '中正區',
+      cagis_lat: 25.0389256600,
+      cagis_lon: 121.5215902500,
+      dimensions: {
+        length: '1.5142 m',
+        width: '0.8248 m',
+        area: '0.3621 m²'
+      },
+      images: {
+        before: '/cases/11403-0108001278_before.jpg',
+        after: '/cases/11403-0108001278_after.jpg'
+      }
+    }
+  ];
+
+  const [cases, setCases] = useState(mockCases);
+
+  const handleSearch = async () => {
+    // 準備查詢參數
+    const selectedDistricts = Object.entries(filterParams.districts)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([district]) => district);
+    
+    const selectedSources = Object.entries(filterParams.sources)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([source]) => source);
+    
+    const selectedDamageTypes = Object.entries(filterParams.damageTypes)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([type]) => type);
+
+    const requestBody = {
+      startDate: filterParams.startDate,
+      endDate: filterParams.endDate,
+      districts: selectedDistricts,
+      sources: selectedSources,
+      damageTypes: selectedDamageTypes
+    };
+
+    try {
+      const response = await fetch('/map_caseinfor/read', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+      const data = await response.json();
+      // 如果 API 還沒準備好，就繼續使用模擬資料
+      setCases(data.length ? data : mockCases);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      // 發生錯誤時使用模擬資料
+      setCases(mockCases);
+    }
+  };
+
+  const handleDistrictChange = (district) => {
+    setFilterParams(prev => ({
+      ...prev,
+      districts: {
+        ...prev.districts,
+        [district]: !prev.districts[district]
+      }
+    }));
+  };
+
+  const handleSourceChange = (source) => {
+    setFilterParams(prev => ({
+      ...prev,
+      sources: {
+        ...prev.sources,
+        [source]: !prev.sources[source]
+      }
+    }));
+  };
+
+  const handleDamageTypeChange = (type) => {
+    setFilterParams(prev => ({
+      ...prev,
+      damageTypes: {
+        ...prev.damageTypes,
+        [type]: !prev.damageTypes[type]
+      }
+    }));
+  };
+
+  return (
+    <div className="flex h-full">
+      {/* 左側地圖 */}
+      <div className="flex-1 relative border border-gray-300 rounded-lg overflow-hidden">
+        <MapContainer 
+          center={[25.0389570700, 121.5218481400]} 
+          zoom={15} 
+          className="w-full h-full" 
+          zoomControl={false}
+          maxZoom={22}
+        >
+          <ZoomControl position="topright" />
+          
+          <LayersControl position="topleft">
+            <LayersControl.BaseLayer checked name="電子地圖">
+              <TileLayer
+                url="https://mt{s}.google.com/vt/lyrs=m&style=feature:poi%7Cvisibility:off%7C&style=feature:transit%7Cvisibility:off%7C&style=feature:landscape.man_made%7Cvisibility:off%7C&style=feature:administrative%7Cvisibility:simplified%7C&style=feature:road%7Cvisibility:simplified%7C&style=feature:poi.business%7Cvisibility:off%7C&style=feature:poi.park%7Cvisibility:off&x={x}&y={y}&z={z}"
+                attribution='&copy; Google Maps'
+                maxZoom={20}
+                subdomains={['0','1','2','3']}
+              />
+            </LayersControl.BaseLayer>
+
+            <LayersControl.BaseLayer name="衛星影像">
+              <TileLayer
+                url="https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+                attribution='&copy; Google Maps'
+                maxZoom={20}
+                subdomains={['0','1','2','3']}
+              />
+            </LayersControl.BaseLayer>
+          </LayersControl>
+
+          {cases.map((caseItem, index) => (
+            <React.Fragment key={index}>
+              <CircleMarker 
+                center={[caseItem.cagis_lat, caseItem.cagis_lon]}
+                radius={20}
+                pathOptions={{
+                  color: 'red',
+                  fillColor: 'transparent',
+                  weight: 2
+                }}
+              />
+              <Marker 
+                position={[caseItem.cagis_lat, caseItem.cagis_lon]}
+                icon={createCustomIcon(caseItem.cabad_code)}
+              >
+                <Popup>
+                <div className="max-w-md">
+                  <div className="bg-gray-100 p-4 rounded-lg">
+                    <h3 className="font-bold text-lg mb-2">案件編號: {caseItem.caid}</h3>
+                    <p className="text-gray-700">日期: {caseItem.cadate}</p>
+                    <p className="text-gray-700">地址: {caseItem.caDistrict}{caseItem.caAddr}</p>
+                    <p className="text-red-600 font-semibold">特徵: {caseItem.cabad} ({caseItem.cabad_code})</p>
+                    
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-600">尺寸資訊:</p>
+                      <ul className="list-none pl-4">
+                        <li>長度: {caseItem.dimensions.length}</li>
+                        <li>寬度: {caseItem.dimensions.width}</li>
+                        <li>面積: {caseItem.dimensions.area}</li>
+                      </ul>
+                    </div>
+                    
+                    <div className="mt-4 space-y-2">
+                      <img 
+                        src={caseItem.images.before} 
+                        alt="Before" 
+                        className="w-full h-32 object-cover rounded"
+                      />
+                      <img 
+                        src={caseItem.images.after} 
+                        alt="After" 
+                        className="w-full h-32 object-cover rounded"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Popup>
+              </Marker>
+            </React.Fragment>
+          ))}
+        </MapContainer>
+      </div>
+
+      {/* 右側篩選器 */}
+      <div className="w-64 p-4 bg-white shadow-lg">
+        <div className="space-y-4">
+          {/* 日期區間 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">日期區間</label>
+            <input
+              type="date"
+              value={filterParams.startDate}
+              onChange={(e) => setFilterParams(prev => ({ ...prev, startDate: e.target.value }))}
+              className="w-full p-2 border rounded mb-2"
+            />
+            <input
+              type="date"
+              value={filterParams.endDate}
+              onChange={(e) => setFilterParams(prev => ({ ...prev, endDate: e.target.value }))}
+              className="w-full p-2 border rounded"
+            />
+          </div>
+
+          {/* 行政區 */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">行政區</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(filterParams.districts).map(([district, isChecked]) => (
+                <label key={district} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => handleDistrictChange(district)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">{district}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* 來源 */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">來源</h3>
+            <div className="space-y-2">
+              {Object.entries(filterParams.sources).map(([source, isChecked]) => (
+                <label key={source} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => handleSourceChange(source)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">{source}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* 損壞項目 */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">損壞項目</h3>
+            <div className="space-y-2">
+              {Object.entries(filterParams.damageTypes).map(([type, isChecked]) => (
+                <label key={type} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => handleDamageTypeChange(type)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">{type}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* 查詢按鈕 */}
+          <button
+            onClick={handleSearch}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
+          >
+            查詢
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CaseDisplay;
