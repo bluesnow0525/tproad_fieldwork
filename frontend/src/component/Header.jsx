@@ -20,23 +20,26 @@ function Header() {
   }, []);
 
   // 修改：確保 user 存在且有名稱才顯示
-  const displayName = user?.name || user?.username || '使用者';
+  const displayName = user?.name || user?.username || "使用者";
 
   return (
     <header
-      className="w-full bg-white bg-cover bg-left-top h-[12vh] p-5 shadow-lg flex items-center justify-between sticky top-0 z-50"
-      style={{ backgroundImage: `url('/Images/top-bg.png')` }}
+      className="w-full bg-white h-[10vh] p-5 shadow-lg flex items-center justify-between sticky top-0 z-50"
+      style={{
+        backgroundImage: `url('/Images/top-bg.png')`,
+        backgroundSize: "100% 100%",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
+      }}
     >
       <img src="/Images/logo.png" alt="Logo" className="h-28 w-auto" />
       <nav className="flex items-center space-x-4">
-        <h1 className="text-xl font-bold text-blue-800">
-          {displayName} 您好
-        </h1>
+        <h1 className="text-xl font-bold text-blue-800">{displayName} 您好</h1>
         <span className="text-lg">登入時間 {currentTime}</span>
         <button
           onClick={() => {
             logout();
-            navigate('/');
+            navigate("/");
           }}
           className="px-3 py-1 border border-black flex items-center"
         >

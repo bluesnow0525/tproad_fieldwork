@@ -101,7 +101,7 @@ class Fleet(db.Model):
     empid = db.Column(db.String(20), nullable=False)  # 帳號
     empworkcomp = db.Column(db.String(10), nullable=False)  # 公司
     empworkdepid = db.Column(db.String(3), nullable=False)  # 部門
-    emppasswd = db.Column(db.String(100), nullable=False)  # 密碼
+    emppasswd = db.Column(db.String(255), nullable=False)  # 密碼
     empname = db.Column(db.String(50), nullable=False)  # 員工名稱
     jobdate = db.Column(db.DateTime, nullable=False)  # 入職日期
     entel = db.Column(db.String(20))  # 聯絡電話
@@ -174,3 +174,16 @@ class PermissionDetail(db.Model):
     main_category = db.Column(db.String(50), nullable=False)
     sub_category = db.Column(db.String(50), nullable=False)
     is_permitted = db.Column(db.Boolean, default=False)
+    
+class ProjectDistrict(db.Model):
+    __tablename__ = 'districtdata'
+    ProjectCode = db.Column(db.String(20), primary_key=True)
+    District = db.Column(db.String(10), primary_key=True)
+
+class Vehicle(db.Model):
+    __tablename__ = 'cartdata'
+    cno = db.Column(db.String(10), primary_key=True)
+    ifuse = db.Column(db.String(1))
+    rcno = db.Column(db.String(20))
+    carea = db.Column(db.Integer)
+    curl = db.Column(db.String(200))

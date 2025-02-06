@@ -68,7 +68,7 @@ def read_fleet():
                 "account": row.empid or "",
                 "name": row.empname or "",
                 "role": [role_mapping.get(role.strip(), "未知角色") for role in row.etype.split(",")] if row.etype else [],
-                "password": row.emppasswd or "",
+                "password": "",
                 "phone": row.entel or "",
                 "email": row.enemail or "",
                 "notes": row.empcomment or "",

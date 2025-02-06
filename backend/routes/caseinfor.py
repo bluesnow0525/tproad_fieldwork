@@ -16,7 +16,7 @@ from database.extensions import db
 
 caseinfor_bp = Blueprint('caseinfor', __name__)
 
-UPLOAD_FOLDER = "D:/tproad/files/img/"
+UPLOAD_FOLDER = "/app/files/img/"
 
 @caseinfor_bp.route('/read', methods=['POST'])
 def get_caseinfor():
@@ -445,6 +445,7 @@ def delete_caseinfor():
     try:
         data = request.get_json()
         ids_to_delete = data.get('ids', [])
+        user = data.get('user')
         
         if not ids_to_delete:
             return jsonify({"error": "No IDs provided for deletion"}), 400
@@ -473,7 +474,7 @@ def delete_caseinfor():
             
             # 記錄系統日誌
             new_log = SystemLog(
-                slaccount=request.headers.get('user', 'unknown'),
+                slaccount=user,
                 sname='案件管理 > 案件管理',
                 slevent=f"刪除巡查編號：{case.casno}",
                 sodate=datetime.now(),

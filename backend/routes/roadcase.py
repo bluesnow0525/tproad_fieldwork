@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from flask import Blueprint, jsonify, request
 from database.db_read import DB_read
-from database.models import RoadCase
+from database.models import RoadCase, ProjectDistrict, Vehicle
 from database.models import SystemLog
 from database.models import PermissionMain, PermissionDetail
 from database.extensions import db
@@ -73,7 +73,7 @@ def write_roadcase():
                 new_log = SystemLog(
                     slaccount=data.get("managerAccount"),        # 帳號
                     sname='系統管理 > 標案管理',             # 姓名
-                    slevent=f"專案代碼：{data.get("caseCode")}",         # 事件描述
+                    slevent=f"專案代碼：{data.get('caseCode')}",         # 事件描述
                     sodate=datetime.now(),      # 操作日期時間
                     sflag='E'                   # 狀態標記
                 )
@@ -86,7 +86,7 @@ def write_roadcase():
             new_log = SystemLog(
                 slaccount=data.get("managerAccount"),        # 帳號
                 sname='系統管理 > 標案管理',             # 姓名
-                slevent=f"專案代碼：{data.get("caseCode")}",         # 事件描述
+                slevent=f"專案代碼：{data.get('caseCode')}",         # 事件描述
                 sodate=datetime.now(),      # 操作日期時間
                 sflag='A'                   # 狀態標記
             )
@@ -166,3 +166,72 @@ def unformat_roadcase_data(formatted_data):
     }
     # 去掉值為 None 或空字串的項目
     return {k: v for k, v in mapped_data.items() if v not in [None, ""]}
+
+@roadcase_bp.route('/projects', methods=['GET'])
+def get_projects():
+    """獲取所有進行中的專案列表"""
+    try:
+        projects = RoadCase.query.filter(
+            RoadCase.rcstatus == '2'
+        ).with_entities(
+            RoadCase.rcno,
+            RoadCase.rcname
+        ).all()
+        
+        return jsonify({
+            'status': 'success',
+            'data': [{
+                'value': p.rcno,
+                'label': f"{p.rcno} - {p.rcname}"
+            } for p in projects]
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@roadcase_bp.route('/districts/<project_code>', methods=['GET'])
+def get_districts(project_code):
+    """根據專案代碼獲取對應的行政區"""
+    try:
+        districts = ProjectDistrict.query.filter_by(
+            ProjectCode=project_code
+        ).with_entities(
+            ProjectDistrict.District
+        ).all()
+        
+        return jsonify({
+            'status': 'success',
+            'data': [d.District for d in districts]
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@roadcase_bp.route('/vehicles/<project_code>', methods=['GET'])
+def get_vehicles(project_code):
+    """根據專案代碼和來源類型獲取車輛列表"""
+    try:
+        vehicle_type = request.args.get('type', 'car')
+        query = Vehicle.query.filter_by(rcno=project_code)
+        
+        if vehicle_type == 'car':
+            vehicles = query.filter_by(ifuse='Y').all()
+        else:  # motorcycle
+            vehicles = query.filter_by(ifuse='N').all()
+        
+        return jsonify({
+            'status': 'success',
+            'data': [{
+                'value': v.cno,
+                'label': v.cno + (f' (面積: {v.carea}平方公尺)' if v.carea else '')
+            } for v in vehicles]
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500

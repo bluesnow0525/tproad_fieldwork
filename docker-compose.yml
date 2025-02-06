@@ -1,0 +1,27 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./files:/app/files
+    environment:
+      - DB_SERVER=211.23.157.30,1433
+      - DB_NAME=tproad
+      - DB_USER=sa
+      - DB_PASSWORD=69553174
+    networks:
+      - appnetwork
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"  # 改用 80 端口
+    depends_on:
+      - backend
+    networks:
+      - appnetwork
+
+networks:
+  appnetwork:
+    driver: bridge

@@ -34,34 +34,52 @@ const CaseDisplay = () => {
   const [visibleConditions, setVisibleConditions] = useState({});
   const [allSelected, setAllSelected] = useState(true);
   const [filterParams, setFilterParams] = useState({
+    selectedProject: "",
+    selectedVehicles: [],
     reportDateFrom: today,
     reportDateTo: today,
-    districts: {
-      中正區: false,
-      大安區: false,
-      信義區: false,
-      松山區: false,
-      大同區: false,
-      萬華區: false,
-      中山區: false,
-      北投區: false,
-      南港區: false,
-      士林區: false,
-      內湖區: false,
-      文山區: false,
-    },
+    districts: {},
     sources: {
-      APP通報: false,
-      車巡: false,
-      機車: false,
+      selected: "", // 改為單一字串
     },
     damageTypes: {
       AC路面: false,
       人行道及相關設施: false,
     },
   });
+  const [projects, setProjects] = useState([]);
+  const [availableVehicles, setAvailableVehicles] = useState([]);
+  const [isDistrictDropdownOpen, setIsDistrictDropdownOpen] = useState(false);
+  const [isVehicleDropdownOpen, setIsVehicleDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (!event.target.closest(".district-dropdown")) {
+        setIsDistrictDropdownOpen(false);
+      }
+      if (!event.target.closest(".vehicle-dropdown")) {
+        setIsVehicleDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isDistrictDropdownOpen, isVehicleDropdownOpen]);
 
   // Update clusters when cases or visibility changes
+  useEffect(() => {
+    fetch(`${url}/roadcase/projects`)
+      .then((res) => res.json())
+      .then((response) => {
+        if (response.status === "success") {
+          setProjects(response.data);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
   useEffect(() => {
     updateClusters();
   }, [cases, visibleConditions, viewState]);
@@ -157,14 +175,13 @@ const CaseDisplay = () => {
         .filter(([_, checked]) => checked)
         .map(([district]) => district)
         .join(","),
-      source: Object.entries(filterParams.sources)
-        .filter(([_, checked]) => checked)
-        .map(([source]) => source)
-        .join(","),
+      source: filterParams.sources.selected, // 直接使用選中的來源
       damageItem: Object.entries(filterParams.damageTypes)
         .filter(([_, checked]) => checked)
         .map(([type]) => type)
         .join(","),
+      responsibleFactory: filterParams.selectedProject,
+      vehicleNumber: filterParams.selectedVehicles.join(","),
     };
 
     handleFilterChange(filters);
@@ -229,10 +246,11 @@ const CaseDisplay = () => {
           };
         }
         return {
-          url: `/Images/${d.properties.damageCondition_code}.png`,
-          width: 72,
-          height: 72,
-          anchorY: 72,
+          url: `/Images/${d.properties.damageCondition_code}-g.png`,
+          width: 48,
+          height: 48,
+          anchorX: 24,
+          anchorY: 24,
         };
       },
       getSize: (d) => {
@@ -280,26 +298,75 @@ const CaseDisplay = () => {
     return [tileLayer, iconLayer, textLayer];
   }, [clusters]);
 
-  const handleDistrictChange = (district) => {
+  const handleProjectChange = async (projectCode) => {
     setFilterParams((prev) => ({
       ...prev,
-      districts: {
-        ...prev.districts,
-        [district]: !prev.districts[district],
-      },
+      selectedProject: projectCode,
+      selectedVehicles: [],
+      districts: {},
     }));
+
+    if (!projectCode) return;
+
+    try {
+      const response = await fetch(`${url}/roadcase/districts/${projectCode}`);
+      const result = await response.json();
+
+      if (result.status === "success") {
+        const newDistricts = {};
+        result.data.forEach((district) => {
+          newDistricts[district] = false;
+        });
+
+        setFilterParams((prev) => ({
+          ...prev,
+          districts: newDistricts,
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching districts:", error);
+    }
   };
 
-  const handleSourceChange = (source) => {
+  // 當選擇來源時的處理函數
+  const handleSourceChange = async (source) => {
+    // 如果點擊已選中的來源，則取消選擇
+    const newSource = filterParams.sources.selected === source ? "" : source;
+
     setFilterParams((prev) => ({
       ...prev,
       sources: {
-        ...prev.sources,
-        [source]: !prev.sources[source],
+        selected: newSource,
       },
+      // 當切換來源時清空已選車輛
+      selectedVehicles: [],
     }));
+
+    // 只在選擇車巡或機車時獲取車輛列表
+    if (
+      filterParams.selectedProject &&
+      (source === "車巡" || source === "機車")
+    ) {
+      try {
+        const vehicleType = source === "車巡" ? "car" : "motorcycle";
+        const response = await fetch(
+          `${url}/roadcase/vehicles/${filterParams.selectedProject}?type=${vehicleType}`
+        );
+        const result = await response.json();
+
+        if (result.status === "success") {
+          setAvailableVehicles(result.data);
+        }
+      } catch (error) {
+        console.error("Error fetching vehicles:", error);
+      }
+    } else {
+      // 清空可用車輛列表
+      setAvailableVehicles([]);
+    }
   };
 
+  // 在其他 handle 函數附近添加
   const handleDamageTypeChange = (type) => {
     setFilterParams((prev) => ({
       ...prev,
@@ -399,8 +466,8 @@ const CaseDisplay = () => {
 
           {/* Loading 指示器 */}
           {loading && (
-            <div className="absolute top-4 right-4 bg-white px-4 py-2 rounded shadow">
-              載入中...
+            <div className="fixed top-0 left-0 w-full h-full bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
+              <div className="loader border-t-4 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
             </div>
           )}
 
@@ -427,25 +494,35 @@ const CaseDisplay = () => {
                 <h3 className="font-bold text-lg mb-2">
                   案件編號: {selectedCase.inspectionNumber}
                 </h3>
-                <p className="text-gray-700">日期: {selectedCase.reportDate}</p>
-                <p className="text-gray-700">
-                  地址: {selectedCase.district}
-                  {selectedCase.roadSegment}
-                </p>
-                <p className="text-red-600 font-semibold">
-                  特徵: {selectedCase.damageCondition} (
-                  {selectedCase.damageCondition_code})
-                </p>
-
-                <div className="mt-2">
-                  <p className="text-sm text-gray-600">尺寸資訊:</p>
-                  <ul className="list-none pl-4">
-                    <li>長度: {selectedCase.length}</li>
-                    <li>寬度: {selectedCase.width}</li>
-                    <li>面積: {selectedCase.area}</li>
-                  </ul>
+                <div className="flex w-full">
+                  <div className="w-1/3">
+                    <p className="text-gray-700">
+                      日期: {selectedCase.reportDate}
+                    </p>
+                    <p className="text-gray-700">
+                      地址: {selectedCase.district}
+                      {selectedCase.roadSegment}
+                    </p>
+                    <p className="text-red-600 font-semibold">
+                      破壞: {selectedCase.damageCondition}
+                    </p>
+                  </div>
+                  <div className="w-1/3">
+                    <p className="text-gray-700">尺寸資訊:</p>
+                    <ul className="list-none pl-4">
+                      <li>長度: {selectedCase.length}</li>
+                      <li>寬度: {selectedCase.width}</li>
+                      <li>面積: {selectedCase.area}</li>
+                    </ul>
+                  </div>
+                  <div className="w-1/3">
+                    <p className="text-gray-700">位置:</p>
+                    <ul className="list-none pl-4">
+                      <li>經度: {selectedCase.longitude}</li>
+                      <li>緯度: {selectedCase.latitude}</li>
+                    </ul>
+                  </div>
                 </div>
-
                 <div className="mt-4 flex">
                   {selectedCase.photoBefore && (
                     <img
@@ -471,6 +548,25 @@ const CaseDisplay = () => {
       {/* 右側篩選器 */}
       <div className="w-64 p-4 bg-white shadow-lg">
         <div className="space-y-4">
+          {/* 專案選擇 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              專案選擇
+            </label>
+            <select
+              value={filterParams.selectedProject}
+              onChange={(e) => handleProjectChange(e.target.value)}
+              className="w-full p-2 border rounded"
+            >
+              <option value="">請選擇專案</option>
+              {projects.map((project) => (
+                <option key={project.value} value={project.value}>
+                  {project.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* 日期區間 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -500,45 +596,217 @@ const CaseDisplay = () => {
             />
           </div>
 
-          {/* 行政區 */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">行政區</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(filterParams.districts).map(
-                ([district, isChecked]) => (
-                  <label key={district} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => handleDistrictChange(district)}
-                      className="mr-2"
+          {/* 行政區下拉選單 */}
+          {Object.keys(filterParams.districts).length > 0 && (
+            <div className="district-dropdown">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">行政區</h3>
+              <div className="relative">
+                <div
+                  className="w-full p-2 border rounded bg-white cursor-pointer flex justify-between items-center"
+                  onClick={() =>
+                    setIsDistrictDropdownOpen(!isDistrictDropdownOpen)
+                  }
+                >
+                  <div className="flex-1 overflow-hidden text-sm">
+                    {Object.entries(filterParams.districts)
+                      .filter(([_, checked]) => checked)
+                      .map(([district]) => district)
+                      .join(", ") || "請選擇行政區"}
+                  </div>
+                  <svg
+                    className={`w-4 h-4 transition-transform ${
+                      isDistrictDropdownOpen ? "transform rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
                     />
-                    <span className="text-sm">{district}</span>
-                  </label>
-                )
-              )}
+                  </svg>
+                </div>
+
+                {isDistrictDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border rounded shadow-lg max-h-60 overflow-y-auto">
+                    <div className="p-2 border-b">
+                      <label className="flex items-center hover:bg-gray-100 px-2 py-1 rounded cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={Object.values(filterParams.districts).every(
+                            (v) => v
+                          )}
+                          onChange={() => {
+                            const allChecked = Object.values(
+                              filterParams.districts
+                            ).every((v) => v);
+                            const newValue = !allChecked;
+                            setFilterParams((prev) => ({
+                              ...prev,
+                              districts: Object.keys(prev.districts).reduce(
+                                (acc, district) => {
+                                  acc[district] = newValue;
+                                  return acc;
+                                },
+                                {}
+                              ),
+                            }));
+                          }}
+                          className="mr-2"
+                        />
+                        <span className="text-sm font-medium">全選</span>
+                      </label>
+                    </div>
+                    {Object.entries(filterParams.districts).map(
+                      ([district, isChecked]) => (
+                        <label
+                          key={district}
+                          className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              setFilterParams((prev) => ({
+                                ...prev,
+                                districts: {
+                                  ...prev.districts,
+                                  [district]: !isChecked,
+                                },
+                              }));
+                            }}
+                            className="mr-2"
+                          />
+                          <span className="text-sm">{district}</span>
+                        </label>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 來源 */}
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-2">來源</h3>
             <div className="space-y-2">
-              {Object.entries(filterParams.sources).map(
-                ([source, isChecked]) => (
-                  <label key={source} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => handleSourceChange(source)}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">{source}</span>
-                  </label>
-                )
-              )}
+              {["APP通報", "車巡", "機車"].map((source) => (
+                <label key={source} className="flex items-center">
+                  <input
+                    type="radio" // 改為 radio
+                    name="source" // 加入 name 以確保單選
+                    checked={filterParams.sources.selected === source}
+                    onChange={() => handleSourceChange(source)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">{source}</span>
+                </label>
+              ))}
             </div>
           </div>
+
+          {/* 車輛選擇 */}
+          {(filterParams.sources.selected === "車巡" ||
+            filterParams.sources.selected === "機車") &&
+            availableVehicles.length > 0 && (
+              <div className="vehicle-dropdown">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  車輛選擇
+                </h3>
+                <div className="relative">
+                  <div
+                    className="w-full p-2 border rounded bg-white cursor-pointer flex justify-between items-center"
+                    onClick={() =>
+                      setIsVehicleDropdownOpen(!isVehicleDropdownOpen)
+                    }
+                  >
+                    <div className="flex-1 overflow-hidden text-sm">
+                      {filterParams.selectedVehicles.length > 0
+                        ? filterParams.selectedVehicles.join(", ")
+                        : "請選擇車輛"}
+                    </div>
+                    <svg
+                      className={`w-4 h-4 transition-transform ${
+                        isVehicleDropdownOpen ? "transform rotate-180" : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+
+                  {isVehicleDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border rounded shadow-lg max-h-60 overflow-y-auto">
+                      <div className="p-2 border-b">
+                        <label className="flex items-center hover:bg-gray-100 px-2 py-1 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={availableVehicles.every((vehicle) =>
+                              filterParams.selectedVehicles.includes(
+                                vehicle.value
+                              )
+                            )}
+                            onChange={() => {
+                              const allSelected = availableVehicles.every(
+                                (vehicle) =>
+                                  filterParams.selectedVehicles.includes(
+                                    vehicle.value
+                                  )
+                              );
+                              setFilterParams((prev) => ({
+                                ...prev,
+                                selectedVehicles: allSelected
+                                  ? []
+                                  : availableVehicles.map((v) => v.value),
+                              }));
+                            }}
+                            className="mr-2"
+                          />
+                          <span className="text-sm font-medium">全選</span>
+                        </label>
+                      </div>
+                      {availableVehicles.map((vehicle) => (
+                        <label
+                          key={vehicle.value}
+                          className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={filterParams.selectedVehicles.includes(
+                              vehicle.value
+                            )}
+                            onChange={() => {
+                              setFilterParams((prev) => ({
+                                ...prev,
+                                selectedVehicles:
+                                  prev.selectedVehicles.includes(vehicle.value)
+                                    ? prev.selectedVehicles.filter(
+                                        (v) => v !== vehicle.value
+                                      )
+                                    : [...prev.selectedVehicles, vehicle.value],
+                              }));
+                            }}
+                            className="mr-2"
+                          />
+                          <span className="text-sm">{vehicle.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
           {/* 損壞項目 */}
           <div>

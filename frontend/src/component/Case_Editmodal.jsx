@@ -287,12 +287,12 @@ function EditModal({
         }
       }}
     >
-      <div className="bg-white rounded-xl shadow-2xl p-8 w-[1200px] max-h-[90vh] overflow-auto">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">編輯資訊</h2>
+      <div className="bg-white rounded-xl shadow-2xl p-4 w-[1200px] max-h-[90vh] ">
+        <h2 className="text-2xl font-bold mb-2 text-gray-800">編輯資訊</h2>
 
         <div className="space-y-4">
           {/* 第一行 */}
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-6 bg-slate-100 p-1">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 巡查編號
@@ -329,7 +329,7 @@ function EditModal({
           </div>
 
           {/* 第二行 */}
-          <div className="grid grid-cols-4 gap-6">
+          <div className="grid grid-cols-4 gap-6 ">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 標案行政區
@@ -351,7 +351,7 @@ function EditModal({
           </div>
 
           {/* 第二行：路段選擇 */}
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-6 bg-slate-100 p-1">
             <div className="flex space-x-4">
               <div className="w-1/6 space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
@@ -393,7 +393,7 @@ function EditModal({
           </div>
 
           {/* 第三行 */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-4 gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 損壞項目
@@ -406,10 +406,6 @@ function EditModal({
               </label>
               {renderInput("損壞情形")}
             </div>
-          </div>
-
-          {/* 第四行 */}
-          <div className="grid grid-cols-3 gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 車道方向
@@ -447,15 +443,18 @@ function EditModal({
             </div>
           </div>
 
-          {/* 第五行 */}
-          <div className="grid grid-cols-4 gap-6">
-            <div className="space-y-2">
+          {/* 合併後的單行 */}
+          <div className="grid grid-cols-12 gap-6 bg-slate-100 p-1">
+            {/* 損壞程度 */}
+            <div className="col-span-2 space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 損壞程度
               </label>
               {renderInput("損壞程度")}
             </div>
-            <div className="col-span-2 space-y-2">
+
+            {/* 尺寸 */}
+            <div className="col-span-6 space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 尺寸（長 / 寬 / 面積）
               </label>
@@ -488,11 +487,9 @@ function EditModal({
                 />
               </div>
             </div>
-          </div>
 
-          {/* 第六行：經緯度 */}
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
+            {/* 經度 */}
+            <div className="col-span-2 space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 經度
               </label>
@@ -504,7 +501,9 @@ function EditModal({
                 name="經度"
               />
             </div>
-            <div className="space-y-2">
+
+            {/* 緯度 */}
+            <div className="col-span-2 space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 緯度
               </label>
@@ -519,7 +518,7 @@ function EditModal({
           </div>
 
           {/* 圖片區塊 */}
-          <div className="grid grid-cols-2 gap-8 mt-4">
+          <div className="grid grid-cols-2 gap-8 mt-2">
             {["施工前遠景照片", "施工後遠景照片"].map((key) => (
               <div key={key} className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
@@ -569,7 +568,7 @@ function EditModal({
         </div>
 
         {/* 按鈕區 */}
-        <div className="flex justify-end space-x-4 mt-8">
+        <div className="flex justify-end space-x-4 mt-2">
           <button
             onClick={onClose}
             className="px-5 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"

@@ -49,7 +49,7 @@ function WorkAccountEditModal({ isOpen, onClose, selectedItem, onSave }) {
   };
 
   const handleSave = () => {
-    if (!formData.vendor || !formData.account || !formData.name || !formData.msid) {
+    if (!formData.vendor || !formData.account || !formData.name || !formData.msid || !formData.password) {
       alert("請填寫所有必填欄位！");
       return;
     }

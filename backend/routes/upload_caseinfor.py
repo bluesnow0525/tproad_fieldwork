@@ -9,7 +9,7 @@ from database.extensions import db
 from werkzeug.security import check_password_hash
 
 # Define upload folder path
-UPLOAD_FOLDER = "D:/tproad/files/img/"
+UPLOAD_FOLDER = "/app/files/img/"
 
 upcasedata_bp = Blueprint('upcasedata', __name__)
 

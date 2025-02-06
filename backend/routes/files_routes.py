@@ -6,7 +6,7 @@ from datetime import datetime
 files_bp = Blueprint('files', __name__)
 
 # 定義檔案基礎路徑
-BASE_DIR = os.path.abspath("D:/tproad/files")
+BASE_DIR = os.path.abspath("/app/files")
 
 @files_bp.route("/pdf/<filename>")
 def download_pdf(filename):

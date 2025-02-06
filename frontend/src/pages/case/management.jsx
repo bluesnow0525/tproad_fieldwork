@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import PaginationComponent from "../../component/Pagination";
 import EditModal from "../../component/Case_Editmodal";
 import RoadSegmentModal from "../../component/RoadSegmentModal";
+import DistrictModal from "../../component/DistrictModal";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { url } from "../../assets/url";
@@ -55,6 +56,7 @@ function CaseManagement() {
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   const [isRoadSegmentModalOpen, setIsRoadSegmentModalOpen] = useState(false);
+  const [isDistrictModalOpen, setIsDistrictModalOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -152,7 +154,7 @@ function CaseManagement() {
         })
         .then((result) => {
           console.log("Review successful:", result);
-          alert("審查成功")
+          alert("審查成功");
 
           // 更新本地數據
           setFilteredData((prevFilteredData) =>
@@ -167,6 +169,59 @@ function CaseManagement() {
           setIsRoadSegmentModalOpen(false); // 關閉modal
         })
         .catch((error) => console.error("Error updating data:", error));
+    }
+  };
+
+  const handleBatchDistrictUpdate = () => {
+    if (!selectedItems.length) {
+      alert("請先勾選項目！");
+      return;
+    }
+    setIsDistrictModalOpen(true);
+  };
+
+  const handleDistrictConfirm = (district) => {
+    const confirmAction = window.confirm("確認修改所選項目的行政區？");
+    if (confirmAction) {
+      setLoading(true);
+
+      const updatedItems = selectedItems.map((caid) => ({
+        caid,
+        district,
+      }));
+
+      fetch(`${url}/caseinfor/write`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedItems),
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("Failed to update data");
+          return response.json();
+        })
+        .then((result) => {
+          console.log("Update successful:", result);
+          alert("行政區修改成功");
+
+          // 更新本地數據
+          setFilteredData((prevFilteredData) =>
+            prevFilteredData.map((item) =>
+              selectedItems.includes(item.caid) ? { ...item, district } : item
+            )
+          );
+
+          setSelectedItems([]); // 清空選取項目
+          setIsDistrictModalOpen(false); // 關閉 modal
+        })
+        .catch((error) => {
+          console.error("Error updating data:", error);
+          alert("更新失敗，請稍後再試");
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   };
 
@@ -368,10 +423,10 @@ function CaseManagement() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          user: user?.username, // 傳送用戶資訊到後端
         },
         body: JSON.stringify({
           ids: selectedItems,
+          user: user?.username,
         }),
       })
         .then((response) => {
@@ -488,180 +543,246 @@ function CaseManagement() {
     <div className="p-6 bg-gray-100 min-h-screen">
       <div className="bg-white p-4 rounded-md shadow-md mb-4">
         <h2 className="text-xl font-semibold mb-4">案件管理 / 案件管理</h2>
-        <div className="grid grid-cols-4 gap-4 mb-4">
-          <label className="flex items-center space-x-2">
+        <div className="grid grid-cols-5 gap-3 mb-4">
+          <label className="flex items-center space-x-1">
             <input
               type="checkbox"
               name="notification"
               checked={filters.notification}
               onChange={handleFilterChange}
-              className="h-6 w-6"
+              className="h-4 w-4"
             />
-            <span>觀察案件</span>
+            <span className="text-base text-gray-700 font-semibold">
+              觀察案件
+            </span>
           </label>
-          <input
-            type="text"
-            name="inspectionNumber"
-            placeholder="巡查編號"
-            value={filters.inspectionNumber}
-            onChange={handleFilterChange}
-            className="p-2 border rounded"
-          />
-          <select
-            name="district"
-            value={filters.district}
-            onChange={handleFilterChange}
-            className="p-2 border rounded"
-          >
-            <option value="">行政區</option>
-            <option value="中正區">中正區</option>
-            <option value="大同區">大同區</option>
-            <option value="中山區">中山區</option>
-            <option value="松山區">松山區</option>
-            <option value="大安區">大安區</option>
-            <option value="萬華區">萬華區</option>
-            <option value="信義區">信義區</option>
-            <option value="士林區">士林區</option>
-            <option value="北投區">北投區</option>
-            <option value="內湖區">內湖區</option>
-            <option value="南港區">南港區</option>
-            <option value="文山區">文山區</option>
-          </select>
-          <div className="flex items-center space-x-2">
-            <img
-              src="/Images/show-calendar.gif"
-              alt="calendar"
-              className="h-8 w-8"
-            />
+
+          <div className="flex items-center gap-0.5">
+            <label className="text-base text-gray-700 font-semibold whitespace-nowrap min-w-16 mr-3">
+              巡查編號:
+            </label>
             <input
-              type="date"
-              name="reportDateFrom"
-              placeholder="查報日期起"
-              value={filters.reportDateFrom}
+              type="text"
+              name="inspectionNumber"
+              placeholder="請輸入"
+              value={filters.inspectionNumber}
               onChange={handleFilterChange}
-              max={filters.reportDateTo || today} // 動態限制最大值為 "reportDateTo" 或今天
-              className="p-2 border rounded"
-            />
-            <span className="text-xl font-bold">~</span>
-            <input
-              type="date"
-              name="reportDateTo"
-              placeholder="查報日期迄"
-              value={filters.reportDateTo}
-              onChange={handleFilterChange}
-              min={filters.reportDateFrom || minDate} // 動態限制最小值為 "reportDateFrom" 或 minDate
-              className="p-2 border rounded"
+              className="p-1 border rounded flex-1"
             />
           </div>
-          <select
-            name="source"
-            value={filters.source}
-            onChange={handleFilterChange}
-            className="p-2 border rounded"
-          >
-            <option value="">來源</option>
-            <option value="APP通報">APP通報</option>
-            <option value="車巡">車巡</option>
-            <option value="系統新增">系統新增</option>
-            <option value="機車">機車</option>
-          </select>
-          <input
-            type="text"
-            name="vehicleNumber"
-            placeholder="車號"
-            value={filters.vehicleNumber}
-            onChange={handleFilterChange}
-            className="p-2 border rounded"
-          />
-          <input
-            type="text"
-            name="postedPersonnel"
-            placeholder="登載人員"
-            value={filters.postedPersonnel}
-            onChange={handleFilterChange}
-            className="p-2 border rounded"
-          />
-          <input
-            type="text"
-            name="roadSegment"
-            placeholder="路段"
-            value={filters.roadSegment}
-            onChange={handleFilterChange}
-            className="p-2 border rounded"
-          />
-          <select
-            name="damageItem"
-            value={filters.damageItem}
-            onChange={handleFilterChange}
-            className="p-2 border rounded"
-          >
-            <option value="">損壞項目</option>
-            <option value="AC路面">AC路面</option>
-            <option value="人行道及相關設施">人行道及相關設施</option>
-          </select>
-          <select
-            name="damageLevel"
-            value={filters.damageLevel}
-            onChange={handleFilterChange}
-            className="p-2 border rounded"
-          >
-            <option value="">損壞程度</option>
-            <option value="輕">輕</option>
-            <option value="中">中</option>
-            <option value="重">重</option>
-          </select>
-          <select
-            name="damageCondition"
-            value={filters.damageCondition}
-            onChange={handleFilterChange}
-            className="p-2 border rounded"
-          >
-            <option value="">損壞情形</option>
-          </select>
-          <select
-            name="status"
-            value={filters.status}
-            onChange={handleFilterChange}
-            className="p-2 border rounded"
-          >
-            <option value="">狀態</option>
-            <option value="待審">待審</option>
-            <option value="通過">通過</option>
-          </select>
-          <select
-            name="responsibleFactory"
-            value={filters.responsibleFactory}
-            onChange={handleFilterChange}
-            className="p-2 border rounded"
-          >
-            <option value="">廠商</option>
-            <option value="NRP-111-146-001_寬聯">NRP-111-146-001(寬聯)</option>
-            <option value="PR001_盤碩營造">PR001(盤碩營造)</option>
-            <option value="PR002_盤碩營造">PR002(盤碩營造)</option>
-          </select>
-          {/* <select
-            name="uploadPipe"
-            value={filters.uploadPipe}
-            onChange={handleFilterChange}
-            className="p-2 border rounded"
-          >
-            <option value="">上傳道管</option>
-            <option value="失敗">失敗</option>
-            <option value="是">是</option>
-            <option value="否">否</option>
-          </select> */}
+
+          <div className="flex items-center gap-0.5">
+            <label className="text-base text-gray-700 font-semibold whitespace-nowrap min-w-16">
+              行政區:
+            </label>
+            <select
+              name="district"
+              value={filters.district}
+              onChange={handleFilterChange}
+              className="p-1 border rounded flex-1"
+            >
+              <option value="">請選擇</option>
+              <option value="中正區">中正區</option>
+              <option value="大同區">大同區</option>
+              <option value="中山區">中山區</option>
+              <option value="松山區">松山區</option>
+              <option value="大安區">大安區</option>
+              <option value="萬華區">萬華區</option>
+              <option value="信義區">信義區</option>
+              <option value="士林區">士林區</option>
+              <option value="北投區">北投區</option>
+              <option value="內湖區">內湖區</option>
+              <option value="南港區">南港區</option>
+              <option value="文山區">文山區</option>
+            </select>
+          </div>
+
+          <div className="col-span-2 flex items-center gap-0.5">
+            <label className="text-base text-gray-700 font-semibold whitespace-nowrap mr-3">
+              查報日期:
+            </label>
+            <div className="flex items-center gap-1 flex-1">
+              <img
+                src="/Images/show-calendar.gif"
+                alt="calendar"
+                className="h-6 w-6"
+              />
+              <div className="flex items-center gap-1 flex-1">
+                <input
+                  type="date"
+                  name="reportDateFrom"
+                  value={filters.reportDateFrom}
+                  onChange={handleFilterChange}
+                  max={filters.reportDateTo || today}
+                  className="p-1 border rounded flex-1"
+                />
+                <span className="text-sm">~</span>
+                <input
+                  type="date"
+                  name="reportDateTo"
+                  value={filters.reportDateTo}
+                  onChange={handleFilterChange}
+                  min={filters.reportDateFrom || minDate}
+                  className="p-1 border rounded flex-1"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-0.5">
+            <label className="text-base text-gray-700 font-semibold whitespace-nowrap min-w-16">
+              來源:
+            </label>
+            <select
+              name="source"
+              value={filters.source}
+              onChange={handleFilterChange}
+              className="p-1 border rounded flex-1"
+            >
+              <option value="">請選擇</option>
+              <option value="APP通報">APP通報</option>
+              <option value="車巡">車巡</option>
+              <option value="系統新增">系統新增</option>
+              <option value="機車">機車</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-0.5">
+            <label className="text-base text-gray-700 font-semibold whitespace-nowrap min-w-16">
+              車號:
+            </label>
+            <input
+              type="text"
+              name="vehicleNumber"
+              placeholder="請輸入"
+              value={filters.vehicleNumber}
+              onChange={handleFilterChange}
+              className="p-1 border rounded flex-1"
+            />
+          </div>
+
+          <div className="flex items-center gap-0.5">
+            <label className="text-base text-gray-700 font-semibold whitespace-nowrap min-w-16 mr-3">
+              登載人員:
+            </label>
+            <input
+              type="text"
+              name="postedPersonnel"
+              placeholder="請輸入"
+              value={filters.postedPersonnel}
+              onChange={handleFilterChange}
+              className="p-1 border rounded flex-1"
+            />
+          </div>
+
+          <div className="flex items-center gap-0.5">
+            <label className="text-base text-gray-700 font-semibold whitespace-nowrap min-w-16">
+              路段:
+            </label>
+            <input
+              type="text"
+              name="roadSegment"
+              placeholder="請輸入"
+              value={filters.roadSegment}
+              onChange={handleFilterChange}
+              className="p-1 border rounded flex-1"
+            />
+          </div>
+
+          <div className="flex items-center gap-0.5">
+            <label className="text-base text-gray-700 font-semibold whitespace-nowrap min-w-16 mr-3">
+              損壞項目:
+            </label>
+            <select
+              name="damageItem"
+              value={filters.damageItem}
+              onChange={handleFilterChange}
+              className="p-1 border rounded flex-1"
+            >
+              <option value="">請選擇</option>
+              <option value="AC路面">AC路面</option>
+              <option value="人行道及相關設施">人行道及相關設施</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-0.5">
+            <label className="text-base text-gray-700 font-semibold whitespace-nowrap min-w-16 mr-3">
+              損壞程度:
+            </label>
+            <select
+              name="damageLevel"
+              value={filters.damageLevel}
+              onChange={handleFilterChange}
+              className="p-1 border rounded flex-1"
+            >
+              <option value="">請選擇</option>
+              <option value="輕">輕</option>
+              <option value="中">中</option>
+              <option value="重">重</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-0.5">
+            <label className="text-base text-gray-700 font-semibold whitespace-nowrap min-w-16 mr-3">
+              損壞情形:
+            </label>
+            <select
+              name="damageCondition"
+              value={filters.damageCondition}
+              onChange={handleFilterChange}
+              className="p-1 border rounded flex-1"
+            >
+              <option value="">請選擇</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-0.5">
+            <label className="text-base text-gray-700 font-semibold whitespace-nowrap min-w-16">
+              狀態:
+            </label>
+            <select
+              name="status"
+              value={filters.status}
+              onChange={handleFilterChange}
+              className="p-1 border rounded flex-1"
+            >
+              <option value="">請選擇</option>
+              <option value="待審">待審</option>
+              <option value="通過">通過</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-0.5">
+            <label className="text-base text-gray-700 font-semibold whitespace-nowrap min-w-16">
+              廠商:
+            </label>
+            <select
+              name="responsibleFactory"
+              value={filters.responsibleFactory}
+              onChange={handleFilterChange}
+              className="p-1 border rounded flex-1"
+            >
+              <option value="">請選擇</option>
+              <option value="NRP-111-146-001_寬聯">
+                NRP-111-146-001(寬聯)
+              </option>
+              <option value="PR001_盤碩營造">PR001(盤碩營造)</option>
+              <option value="PR002_盤碩營造">PR002(盤碩營造)</option>
+            </select>
+          </div>
         </div>
+
         <div className="flex space-x-2">
           <button
             onClick={applyFilters}
-            className="p-2 bg-blue-500 text-white rounded shadow w-20 flex"
+            className="p-2 bg-blue-500 text-white rounded shadow w-20 flex items-center justify-center"
           >
             <img
               src="/Images/icon-search.png"
-              alt="calendar"
+              alt="search"
               className="h-5 w-5 mr-1"
             />
-            查詢
+            <span>查詢</span>
           </button>
           <button
             onClick={exportToExcel}
@@ -679,7 +800,6 @@ function CaseManagement() {
         setCurrentPage={setCurrentPage}
         totalItems={filteredData.length} // 傳入總資料筆數
       />
-
       <div className="flex space-x-2 mt-4">
         <button
           onClick={handleConfirmReview}
@@ -688,19 +808,24 @@ function CaseManagement() {
           審查通過
         </button>
         <button
+          onClick={handleBatchDistrictUpdate}
+          className="p-2 bg-yellow-400 text-white rounded shadow w-32"
+        >
+          批次修改行政區
+        </button>
+        <button
           onClick={handleDelete}
           className="p-2 bg-red-500 text-white rounded shadow w-14"
         >
           刪除
         </button>
       </div>
-
       {/* Table Display */}
       <div className="bg-white rounded-md shadow-md p-4 overflow-x-auto mt-2">
         <table className="w-full text-center border-collapse">
           <thead className="whitespace-nowrap">
-            <tr className="bg-gray-200">
-              <th className="p-3 border">
+            <tr className="bg-gray-300">
+              <th className="p-3 ">
                 全選
                 <input
                   type="checkbox"
@@ -709,9 +834,9 @@ function CaseManagement() {
                   className="ml-2"
                 />
               </th>
-              <th className="p-3 border">結案</th>
-              <th className="p-3 border">觀察案件</th>
-              <th className="p-3 border">
+              <th className="p-3 ">結案</th>
+              <th className="p-3 ">觀察案件</th>
+              <th className="p-3 ">
                 報告日期
                 <button
                   onClick={() => applySorting("reportDate")}
@@ -724,7 +849,7 @@ function CaseManagement() {
                   />
                 </button>
               </th>
-              <th className="p-3 border">
+              <th className="p-3 ">
                 負責廠商
                 <button
                   onClick={() => applySorting("responsibleFactory")}
@@ -737,7 +862,7 @@ function CaseManagement() {
                   />
                 </button>
               </th>
-              <th className="p-3 border">
+              <th className="p-3 ">
                 巡查編號
                 <button
                   onClick={() => applySorting("inspectionNumber")}
@@ -750,7 +875,7 @@ function CaseManagement() {
                   />
                 </button>
               </th>
-              <th className="p-3 border">
+              <th className="p-3 ">
                 行政區
                 <button
                   onClick={() => applySorting("district")}
@@ -763,7 +888,7 @@ function CaseManagement() {
                   />
                 </button>
               </th>
-              <th className="p-3 border">
+              <th className="p-3">
                 巡查路段
                 <button
                   onClick={() => applySorting("roadSegment")}
@@ -776,11 +901,11 @@ function CaseManagement() {
                   />
                 </button>
               </th>
-              <th className="p-3 border">車道方向</th>
-              <th className="p-3 border">損壞項目</th>
-              <th className="p-3 border">損壞程度</th>
-              <th className="p-3 border">損壞情形</th>
-              <th className="p-3 border">
+              <th className="p-3">車道方向</th>
+              <th className="p-3 ">損壞項目</th>
+              <th className="p-3">損壞程度</th>
+              <th className="p-3">損壞情形</th>
+              <th className="p-3">
                 車號
                 <button
                   onClick={() => applySorting("vehicleNumber")}
@@ -793,15 +918,16 @@ function CaseManagement() {
                   />
                 </button>
               </th>
-              <th className="p-3 border">登載人員</th>
-              <th className="p-3 border">縮圖</th>
+              <th className="p-3 ">登載人員</th>
+              <th className="p-3">縮圖</th>
             </tr>
           </thead>
           <tbody>
-            {paginatedData.map((item) => (
+            {paginatedData.map((item, index) => (
               <tr
                 key={item.caid}
-                className="hover:bg-gray-100 cursor-pointer"
+                className={`cursor-pointer hover:bg-yellow-50
+                  ${index % 2 === 0 ? "bg-gray-100" : "bg-[#fffefd]"}`}
                 onClick={() => openModal(item)}
               >
                 <td
@@ -903,7 +1029,6 @@ function CaseManagement() {
           </tbody>
         </table>
       </div>
-
       {/* Edit Modal */}
       <EditModal
         isOpen={isModalOpen}
@@ -918,6 +1043,11 @@ function CaseManagement() {
         onClose={() => setIsRoadSegmentModalOpen(false)}
         onConfirm={handleRoadSegmentConfirm}
         selectedItems={selectedItems}
+      />
+      <DistrictModal
+        isOpen={isDistrictModalOpen}
+        onClose={() => setIsDistrictModalOpen(false)}
+        onConfirm={handleDistrictConfirm}
       />
       {loading && (
         <div className="fixed top-0 left-0 w-full h-full bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">

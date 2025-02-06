@@ -15,8 +15,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 reportdata_bp = Blueprint('reportdata', __name__)
 
-BASE_PDF_DIR = "D:/tproad/files/pdf"
-BASE_XLSX_DIR = "D:/tproad/files/xlsx"
+BASE_PDF_DIR = "/app/files/pdf"
+BASE_XLSX_DIR = "/app/files/xlsx"
 os.makedirs(BASE_PDF_DIR, exist_ok=True)
 os.makedirs(BASE_XLSX_DIR, exist_ok=True)
 

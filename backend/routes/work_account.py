@@ -81,7 +81,7 @@ def read_workaccount():
                 "name": row.empname or "",
                 "role": [role_mapping.get(role.strip(), "未知角色") for role in row.etype.split(",")] if row.etype else [],
                 "msid":  msid_mapping.get(row.msid, ""),
-                "password": row.emppasswd or "",
+                "password": "",
                 "phone": row.entel or "",
                 "email": row.enemail or "",
                 "notes": row.empcomment or "",
@@ -168,7 +168,7 @@ def write_workaccount():
                 new_log = SystemLog(
                     slaccount=data.get("operator"),        # 帳號
                     sname='系統管理 > 工務帳號管理',             # 姓名
-                    slevent=f"帳號:{data.get("account")}，姓名:{data.get("name")}",         # 事件描述
+                    slevent=f'帳號:{data.get("account")}，姓名:{data.get("name")}',         # 事件描述
                     sodate=datetime.now(),      # 操作日期時間
                     sflag='E'                   # 狀態標記
                 )
@@ -185,7 +185,7 @@ def write_workaccount():
             new_log = SystemLog(
                 slaccount=data.get("operator"),        # 帳號
                 sname='系統管理 > 工務帳號管理',             # 姓名
-                slevent=f"帳號:{data.get("account")}，姓名:{data.get("name")}",         # 事件描述
+                slevent=f'帳號:{data.get("account")}，姓名:{data.get("name")}',         # 事件描述
                 sodate=datetime.now(),      # 操作日期時間
                 sflag='A'                   # 狀態標記
             )

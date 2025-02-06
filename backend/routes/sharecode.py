@@ -95,7 +95,7 @@ def write_shared_code():
                 new_log = SystemLog(
                     slaccount=data.get("modifier"),        # 帳號
                     sname='系統管理 > 共用代碼管理',             # 姓名
-                    slevent=f"類別代碼:{data.get("categoryCode")}，共用代碼:{data.get("sharedCode")}",         # 事件描述
+                    slevent=f'類別代碼:{data.get("categoryCode")}，共用代碼:{data.get("sharedCode")}',         # 事件描述
                     sodate=datetime.now(),      # 操作日期時間
                     sflag='E'                   # 狀態標記
                 )
@@ -108,7 +108,7 @@ def write_shared_code():
             new_log = SystemLog(
                 slaccount=data.get("modifier"),        # 帳號
                 sname='系統管理 > 共用代碼管理',             # 姓名
-                slevent=f"類別代碼:{data.get("categoryCode")}，共用代碼:{data.get("sharedCode")}",         # 事件描述
+                slevent=f'類別代碼:{data.get("categoryCode")}，共用代碼:{data.get("sharedCode")}',         # 事件描述
                 sodate=datetime.now(),      # 操作日期時間
                 sflag='A'                   # 狀態標記
             )

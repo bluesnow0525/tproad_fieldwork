@@ -18,7 +18,7 @@ function Home() {
       title: "圖台",
       description: "互動式地圖查看案件分布",
       icon: "🗺️",
-      link: "/map/real-time-vehicle",
+      link: "/map/case-display",
     },
     {
       title: "報表統計",
@@ -29,7 +29,7 @@ function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-full bg-gray-50">
       {/* 增強版頂部歡迎區塊 */}
       <div className="relative bg-[#F8FBFE] overflow-hidden">
         <div className="absolute inset-0">

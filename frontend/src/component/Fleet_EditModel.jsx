@@ -60,7 +60,7 @@ function FleetEditModal({ isOpen, onClose, selectedItem, onSave }) {
   };
 
   const handleSave = () => {
-    if (!formData.caseCode || !formData.account || !formData.name || formData.role.length === 0) {
+    if (!formData.caseCode || !formData.account || !formData.name || formData.role.length === 0 || !formData.password) {
       alert("請填寫所有必填欄位，並選擇至少一個角色！");
       console.log(formData)
       return;
